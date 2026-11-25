@@ -12,71 +12,17 @@
     <script>
       /* 锁屏判定（在页面渲染前同步执行，避免已解锁时闪一下锁屏、未解锁时闪一下树）：
          带 ?s= 的分享链接是观看模式，不加锁；
-         设备上存的邀请码的摘要还在清单里 → 直接进；不在清单里（或没存过）→ 显示锁屏。
-         清单里只存邀请码的 SHA-256 摘要，不存明文码，翻源码拿不到任何一个有效码。 */
+         设备上存的邀请码还在清单里 → 直接进；不在清单里（或没存过）→ 显示锁屏。 */
       (function () {
-        function sha256hex(ascii) {
-          function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
-          var maxWord = Math.pow(2, 32), result = '';
-          var words = [], asciiBitLength = ascii.length * 8;
-          var hash = sha256hex.h = sha256hex.h || [], k = sha256hex.k = sha256hex.k || [];
-          var primeCounter = k.length, isComposite = {};
-          for (var candidate = 2; primeCounter < 64; candidate++) {
-            if (!isComposite[candidate]) {
-              for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
-              hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
-              k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
-            }
-          }
-          ascii += '\x80';
-          while (ascii.length % 64 - 56) ascii += '\x00';
-          for (var i = 0; i < ascii.length; i++) {
-            var j = ascii.charCodeAt(i);
-            if (j >> 8) return null;
-            words[i >> 2] |= j << ((3 - i) % 4) * 8;
-          }
-          words[words.length] = ((asciiBitLength / maxWord) | 0);
-          words[words.length] = asciiBitLength;
-          for (var j = 0; j < words.length;) {
-            var w = words.slice(j, j += 16), oldHash = hash;
-            hash = hash.slice(0, 8);
-            for (var i = 0; i < 64; i++) {
-              var w15 = w[i - 15], w2 = w[i - 2];
-              var a = hash[0], e = hash[4];
-              var temp1 = hash[7]
-                + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25))
-                + ((e & hash[5]) ^ ((~e) & hash[6]))
-                + k[i]
-                + (w[i] = (i < 16) ? w[i] : (
-                    w[i - 16]
-                    + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3))
-                    + w[i - 7]
-                    + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))
-                  ) | 0);
-              var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22))
-                + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
-              hash = [(temp1 + temp2) | 0].concat(hash);
-              hash[4] = (hash[4] + temp1) | 0;
-            }
-            for (var i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
-          }
-          for (var i = 0; i < 8; i++) {
-            for (var j = 3; j + 1; j--) {
-              var b = (hash[i] >> (j * 8)) & 255;
-              result += ((b < 16) ? '0' : '') + b.toString(16);
-            }
-          }
-          return result;
-        }
-        var CODE_DIGESTS = ['de31dbc8d8b9d0928dc462f11641352833e4a15d3b4d0dd4321a744bc11bedd5','61029148eecdb8386c27ecd79ef64c44034dad391fcc57e74c162502c763e2d9','0140491785e1afdc16c6f45b51af0e0600c2dc4a0f02773d91733a35cef7d25e','a3e1b802479b40be40d63259a0e1d4fd0dbe997faf6854bae688296347d9955a','7358c0f28e7b8ea59c7834711575e7eae5861be6d4cfb5e286cc02bb42def6df','9b72adc250d3f3b263f25f65449c065538ca7eb67f6b67b5871e5893530bcce4','36a655cbeed4482f351457cbf1ce8d89731865e9f073e92528755cef04fc7dd0','7942ca5d60b9bce67bf89340952d7785d5f1c0d8aa401ffc4185094265c5e825','e8105bac1e0b63b022baefe567287892749158562ce3d26c99696b8a3d6e2d70','982f53b9f32fc04a46e970828c130cc2e9243817224bacd869791f233fa33122','e6c5a0a1e6469832f4b2fabec6a4c7b3cc7fd3616dadb97ae0375d470016ebf8','97e2efddf11714b7ea197a68cbaf601592f7c1501dd80e4d1aa3085db3c03486','6ae39791b38efcca9b17da21b3972d114a42a78749a0c3b75c62ad2a2004d602','b60695ff60f45da4f0fd459a892f4b6274f5391d007c0c797bafb17c9378bfc9','7d86907e38572fa35f64d647c7a86349a4e2bba728d57d69690fc412457579cc','db88c64c9b8e35d4e8be7e3a17b97263e8ae048f2415023e625b2b32f9f37f4e','00fe68bd1c10cca39f6950d6b2ddec2a13376629fdce85ed30680282c2159496','9a01cd75031882400cd67c1eb683381623686088f88a89c50dea06fbc5240c41','0f76ff4bf2f991dad89141a93df758d5dc803136a9d2d79359b45389db882dbb','0126dc2f997131ece7b363a50d7733d160fe66ef8adcd13e911c9faa3cbdf281','0695b54dedf830634a439782765ae68d0b095d0d7cfaf44f76c5c639aff6d7f7','c6e6e24d833e015403cf4efbfac12fdf662add3134d99a1c3c00c862ff8fd517','7eb21431f25592a76ebea264b5bc7b6fa70e4b55f38372e92d0059122570c4d8','34b3ff618f758c5eec3df9cb7ceed1b30dc5203b9a9eae4dc68b2cbc5eda34fd','2b2fd71d6f186796ff60f7e61c280cb2fb518db616409205128b38039fb141fd','a5206fefd8fa0848f47275af26fd6c698e098926f6574d633d2d2f599bb691e0','d6f5c58d30a746d44380c108585dfe9de9757d1054a559b2be9ae0b86009adcb','c1489bf3be0d2d658590b2d5dda865979bf2a7939739e5581fe1a5b6447a0f46','6cb866d7ce702c415757cc1d3b7d2f342df25816bd0a3be91f3c8be68900717d','1691e6aa009980d40ae7079e4f47957ee95aecf1c006bf5e9a9336f43482eb83','7f9f3c69bac814b7d7529a1da9b3ed1aab128dc4d599f7c1cf9879ae58c75b24','2c70c1a8331f828669e27c14188e2b410461eae2c2a173d3e19a6555083fb1ec','110485416530949111f3dce1f3f8b1998af77de8cdfba22b4e2180f2f7fb1077','93d318414519fb2774e79c283974252d532064d39afe248920226aa044ce6ba9','84be02138d8dadc8219897804a0c93459c4a75c4b6969de64f8d991cd8584f45','fa02603d3fdfb537d92751a905a84476242f118116e7a27de3c285aa667594eb','2c60565aa2b7a7a5166608adf02efb04313930b21d396bc4a3eb35ea32ba3702','d239a94c18092899c7d1f79ef981c71cc788c9592add33ae49f131ac7ca89179','36196b8b2d3790ae70df3399c51139a05a0a03bae587650526596902bff93517','106f164aecf4446077af1320ddf896ab9c8b6419b5d65093542b397c4e9d04b5','eb918a05847bcbd82535d236a5e45d8e87f81d516627b57f8adcdf2d2345d269','f31e434b223664b266fb5af25cf69ab4477eaa57ae6aad5208126eaaee09e2c0','c87dd8f9f1ae34c8e1a546f300d8cbbc5b836aabca20fddc994001f97f34040d','daa0b5ed3afe5954e1366be677fc437755570177a27c61df337ca2dafccab28a','732b8ddb95a517adcd02b8c44bf6561c0ab69dce9d0b66394282d13c5115ab68','20b2b717c338cbe39e815d53e76b5711c3b377a71e17ee6bb40e58302ee4ccb4','7d617b6ec3fd0c0fff34d13a75359f03b5953cdc82012a96bb04abaa43b88be6','4eaac7208e4b9131bba0bb65d3364a59a70b75930e060b0685431d295be51354','811e95a02f3b1e56c5cf70212f8951257f9b29b2b6de3fa13fa10d2537ca94bb','0050eef2a3e40f242756e1a5813926612a30def791acf9a7e4d9a86a04e24e08','e624bad956aa428fb565a39db277cf0316d039abcf87d022a58bcd330fbb31fe'];
         try {
           var hasShare = false;
           try { hasShare = !!(window.URLSearchParams && new URLSearchParams(location.search).get('s')); } catch (e) {}
           if (!hasShare && location.hash) hasShare = /[#&]s=/.test(location.hash);
           if (hasShare) return;
+          var codes = ['826075','663724','999303','880326','121851','586760','478455','133913','795021','208107','343480','257502','303646','847697','444703','243530','843453','638761','225220','528901','942374','764124','136009','337943','992590','149735','296562','483959','515610','563625','987175','765127','823748','947353','295323','289909','483775','730611','864411','148980','366794','240809','648081','758899','631808','713699','537572','106399','567421','596276','997819'];
           var saved = null;
           try { saved = localStorage.getItem('luo-xuan-sheng-dan-shu-unlock'); } catch (e) {}
-          if (!saved || CODE_DIGESTS.indexOf(sha256hex(saved)) < 0) document.documentElement.classList.add('is-locked');
+          if (!saved || codes.indexOf(saved) < 0) document.documentElement.classList.add('is-locked');
         } catch (e) {
           document.documentElement.classList.add('is-locked');
         }
@@ -710,7 +656,6 @@
       }
       .share-note { font-size: 12.5px; line-height: 1.6; color: #ffb3cd; }
       .share-note[hidden] { display: none; }
-      .share-len { font-size: 12px; line-height: 1.5; color: rgba(255, 255, 255, .55); }
       .share-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
       /* 锁屏：打开主链接先显示，全屏深色底 + 粉色点缀，与树的风格一致；
          只有 html 带 is-locked 类时才显示（判定脚本在页面渲染前已跑完，不闪屏） */
@@ -907,7 +852,6 @@
         <div class="share-desc">把这个链接发给朋友，朋友打开就能看到你做好的这棵树——只能看、不能改，还能点右上角把图和视频存进他自己的相册。</div>
         <textarea class="share-link" id="shareLink" readonly aria-label="分享链接"></textarea>
         <div class="share-note" id="shareNote" hidden>链接太长了，照片没能放进去，朋友看到的树会没有照片；主题、其他挂件和祝福文字都在。</div>
-        <div class="share-len" id="shareLen"></div>
         <div class="share-actions">
           <button type="button" class="export-primary" id="shareCopy">复制链接</button>
           <button type="button" class="side-btn" id="shareClose">关闭</button>
@@ -2330,104 +2274,32 @@
       /* ================= 生成链接分享 / 观看模式 =================
          分享：点工具条「生成链接分享」，把当前整棵树的状态
          （主题、全部挂件的种类 / 位置 / 大小、照片的位置 / 缩放 / 旋转 / 大小、
-         祝福文字）打包进链接参数 ?s=。
-         打包格式 v2（整段只做一次 base64url）：4 字节大端长度 + 状态 JSON 的
-         UTF-8 字节 + 每张照片的原始 JPEG 字节依次拼接。照片在 JSON 里只记
-         [偏移, 长度]，字节本体放在 JSON 后面——旧版把照片的 base64 文本塞进
-         JSON 再整体 base64 一次，照片等于被编码两遍、白白膨胀近一倍，v2 只编一次。
-         照片先按展示的方形居中裁切、压成小图（长边封顶 160px 的 JPEG）再放进链接；
-         链接总长上限 4000 字，超了就逐档把照片压得更小，实在放不下就去掉照片
-         并在面板里提示；面板里同时显示这条链接的实际长度。
+         祝福文字）打包进链接参数 ?s=（JSON → UTF-8 → base64url）。
+         照片先按展示的方形居中裁切、压成小图（长边封顶 192px 的 JPEG）再放进链接；
+         链接过长时逐档把照片压得更小，实在放不下就去掉照片并在面板里提示。
          观看：链接带 ?s= 打开时进入观看模式——用链接里的状态搭出这棵树，
          编辑界面全部隐藏（CSS body.view-mode），画布点选 / 拖动禁用，
          右上角只剩「存图」「保存视频」；观看模式全程不读、不写本地保存
          （saveReady 保持 false，restoreSavedState 不调用，scheduleSave / saveStateNow 都是空转），
-         观看者自己手机里存的装饰不会被动到。
-         旧版 v1 链接（纯 JSON、照片是 imgData dataURL）仍可正常解开观看。 */
+         观看者自己手机里存的装饰不会被动到。 */
       var SHARE_BASE = 'https://zyu096347-bot.github.io/luo-xuan-sheng-dan-shu/';
-      var SHARE_LINK_MAX = 4000; // 链接总长上限，超过就继续压照片
+      var SHARE_LINK_MAX = 12000; // 链接总长上限，超过就继续压照片
       var viewMode = false;
       var shareBtnEl = document.getElementById('shareBtn');
       var shareViewEl = document.getElementById('shareView');
       var shareLinkEl = document.getElementById('shareLink');
       var shareNoteEl = document.getElementById('shareNote');
-      var shareLenEl = document.getElementById('shareLen');
       var shareCopyEl = document.getElementById('shareCopy');
       var shareCloseEl = document.getElementById('shareClose');
 
-      /* ---- 字节级编解码：分享载荷统一按字节处理，只做一次 base64url ---- */
-      function utf8ToBytes(str) {
-        if (window.TextEncoder) return new TextEncoder().encode(str);
-        var u = unescape(encodeURIComponent(str)), out = new Uint8Array(u.length);
-        for (var i = 0; i < u.length; i++) out[i] = u.charCodeAt(i) & 255;
-        return out;
+      function b64urlEncode(str) {
+        var b64 = btoa(unescape(encodeURIComponent(str)));
+        return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       }
-      function bytesToUtf8(bytes) {
-        if (window.TextDecoder) return new TextDecoder().decode(bytes);
-        var s = '';
-        for (var i = 0; i < bytes.length; i += 8192) {
-          s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-        }
-        return decodeURIComponent(escape(s));
-      }
-      function bytesToB64(bytes) {
-        var s = '';
-        for (var i = 0; i < bytes.length; i += 8192) {
-          s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-        }
-        return btoa(s);
-      }
-      function bytesToB64url(bytes) {
-        return bytesToB64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      }
-      function b64urlToBytes(s) {
+      function b64urlDecode(s) {
         var b64 = String(s).replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4) b64 += '=';
-        var bin = atob(b64);
-        var out = new Uint8Array(bin.length);
-        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-        return out;
-      }
-      function dataUrlToBytes(dataUrl) {
-        var bin = atob(String(dataUrl).split(',')[1] || '');
-        var out = new Uint8Array(bin.length);
-        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-        return out;
-      }
-      /* v2 载荷：[4 字节 JSON 长度][JSON 字节][照片字节…]，整体 base64url 一次 */
-      function encodeSharePayload(state, blobs) {
-        var jsonBytes = utf8ToBytes(JSON.stringify(state));
-        var total = 4 + jsonBytes.length;
-        for (var i = 0; i < blobs.length; i++) total += blobs[i].length;
-        var out = new Uint8Array(total);
-        var n = jsonBytes.length;
-        out[0] = (n >>> 24) & 255; out[1] = (n >>> 16) & 255;
-        out[2] = (n >>> 8) & 255; out[3] = n & 255;
-        out.set(jsonBytes, 4);
-        var off = 4 + n;
-        for (var j = 0; j < blobs.length; j++) { out.set(blobs[j], off); off += blobs[j].length; }
-        return bytesToB64url(out);
-      }
-      function decodeSharePayload(raw) {
-        var bytes = b64urlToBytes(raw);
-        if (!bytes.length) return null;
-        if (bytes[0] === 0x7B) { // 旧版 v1：整段就是 JSON 文本（以 { 开头）
-          return JSON.parse(bytesToUtf8(bytes));
-        }
-        var n = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
-        if (n <= 0 || 4 + n > bytes.length) return null;
-        var obj = JSON.parse(bytesToUtf8(bytes.subarray(4, 4 + n)));
-        var blobStart = 4 + n;
-        var list = obj.ornaments || [];
-        for (var i = 0; i < list.length; i++) {
-          var o = list[i];
-          if (o && o.type === 'photo' && o.img) {
-            var seg = bytes.subarray(blobStart + o.img[0], blobStart + o.img[0] + o.img[1]);
-            o.imgData = 'data:image/jpeg;base64,' + bytesToB64(seg);
-            delete o.img;
-          }
-        }
-        return obj;
+        return decodeURIComponent(escape(atob(b64)));
       }
       /* 从当前地址里取出分享状态（?s= 或 #s=），解不出来就当普通打开 */
       function parseSharedState() {
@@ -2439,13 +2311,13 @@
             if (m) raw = m[1];
           }
           if (!raw) return null;
-          var obj = decodeSharePayload(raw);
+          var obj = JSON.parse(b64urlDecode(raw));
           if (!obj || typeof obj !== 'object' || !obj.ornaments) return null;
           return obj;
         } catch (e) { return null; }
       }
       /* 照片压成适合在树上显示的小图：按页面实际展示的方形居中裁切，
-         缩到长边 cap px，导成 JPEG 的原始字节（不再套 base64 文本） */
+         缩到长边 cap px，导成 JPEG dataURL */
       function compressPhotoForShare(img, cap) {
         var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
         if (!iw || !ih) return null;
@@ -2455,47 +2327,32 @@
         c.width = out; c.height = out;
         var cx2 = c.getContext('2d');
         cx2.drawImage(img, (iw - side) / 2, (ih - side) / 2, side, side, 0, 0, out, out);
-        try { return dataUrlToBytes(c.toDataURL('image/jpeg', 0.65)); } catch (e) { return null; }
+        try { return c.toDataURL('image/jpeg', 0.72); } catch (e) { return null; }
       }
       function buildShareState(photoCap) {
         var list = [];
-        var blobs = [];
-        var blobOff = 0;
         for (var i = 0; i < ornaments.length; i++) {
           var o = ornaments[i];
           if (o.type === 'photo') {
-            var entry = {
+            list.push({
               type: 'photo',
               fx: o.fx, fy: o.fy,
               scale: o.scale || 1, rot: o.rot || 0,
               size: o.size,
-              img: null
-            };
-            if (photoCap > 0 && o.img) {
-              var bytes = compressPhotoForShare(o.img, photoCap);
-              if (bytes && bytes.length) {
-                entry.img = [blobOff, bytes.length];
-                blobs.push(bytes);
-                blobOff += bytes.length;
-              }
-            }
-            list.push(entry);
+              imgData: (photoCap > 0 && o.img) ? compressPhotoForShare(o.img, photoCap) : null
+            });
           } else {
             list.push({ type: o.type, s: o.s, theta: o.theta, size: o.size });
           }
         }
-        return {
-          state: { v: 2, theme: currentThemeName, g1: greetText1, g2: greetText2, ornaments: list },
-          blobs: blobs
-        };
+        return { v: 1, theme: currentThemeName, g1: greetText1, g2: greetText2, ornaments: list };
       }
       function buildShareLink() {
-        var caps = [160, 120, 88, 64, 0];
+        var caps = [192, 144, 108, 80, 56, 0];
         var hasPhoto = false;
         for (var i = 0; i < ornaments.length; i++) if (ornaments[i].type === 'photo') hasPhoto = true;
         for (var j = 0; j < caps.length; j++) {
-          var built = buildShareState(caps[j]);
-          var link = SHARE_BASE + '?s=' + encodeSharePayload(built.state, built.blobs);
+          var link = SHARE_BASE + '?s=' + b64urlEncode(JSON.stringify(buildShareState(caps[j])));
           if (link.length <= SHARE_LINK_MAX || caps[j] === 0) {
             return { link: link, photosDropped: hasPhoto && caps[j] === 0 };
           }
@@ -2507,7 +2364,6 @@
         var res = buildShareLink();
         shareLinkEl.value = res.link;
         shareNoteEl.hidden = !res.photosDropped;
-        shareLenEl.textContent = '这条链接共 ' + res.link.length + ' 个字符';
         shareCopyEl.textContent = '复制链接';
         shareViewEl.classList.add('show');
       });
@@ -2568,71 +2424,15 @@
 
       /* ================= 邀请码锁（预览版） =================
          主链接打开时先过锁屏（是否显示由 <head> 里的判定脚本在渲染前决定）：
-         输入的六位数对得上清单 → 解锁进入完整页面，
+         输入的六位数在清单里（主人码或普通邀请码）→ 解锁进入完整页面，
          并把码存到这台设备，下次打开不用再输；
-         每次打开都会重新核对存的码是否还对得上清单，对不上就重新显示锁屏。
-         清单里只存全部邀请码（主人码 + 50 个普通码）的 SHA-256 摘要，不存明文，
-         翻源码拿不到任何一个有效码；校验时把输入现算摘要再比对。
-         本质仍是纯前端预览锁：防的是随手点进来的人，懂行的人绕得过，
-         所以主人码不要当真密码到处复用。
+         每次打开都会重新核对存的码是否还在清单里，不在了就重新显示锁屏。
          带 ?s= 的分享链接观看模式不加锁（判定脚本已放行，这里也不拦）。 */
       var LOCK_KEY = 'luo-xuan-sheng-dan-shu-unlock';
-      function sha256hex(ascii) {
-        function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
-        var maxWord = Math.pow(2, 32), result = '';
-        var words = [], asciiBitLength = ascii.length * 8;
-        var hash = sha256hex.h = sha256hex.h || [], k = sha256hex.k = sha256hex.k || [];
-        var primeCounter = k.length, isComposite = {};
-        for (var candidate = 2; primeCounter < 64; candidate++) {
-          if (!isComposite[candidate]) {
-            for (var i = 0; i < 313; i += candidate) isComposite[i] = candidate;
-            hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
-            k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
-          }
-        }
-        ascii += '\x80';
-        while (ascii.length % 64 - 56) ascii += '\x00';
-        for (var i = 0; i < ascii.length; i++) {
-          var j = ascii.charCodeAt(i);
-          if (j >> 8) return null;
-          words[i >> 2] |= j << ((3 - i) % 4) * 8;
-        }
-        words[words.length] = ((asciiBitLength / maxWord) | 0);
-        words[words.length] = asciiBitLength;
-        for (var j = 0; j < words.length;) {
-          var w = words.slice(j, j += 16), oldHash = hash;
-          hash = hash.slice(0, 8);
-          for (var i = 0; i < 64; i++) {
-            var w15 = w[i - 15], w2 = w[i - 2];
-            var a = hash[0], e = hash[4];
-            var temp1 = hash[7]
-              + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25))
-              + ((e & hash[5]) ^ ((~e) & hash[6]))
-              + k[i]
-              + (w[i] = (i < 16) ? w[i] : (
-                  w[i - 16]
-                  + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3))
-                  + w[i - 7]
-                  + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))
-                ) | 0);
-            var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22))
-              + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
-            hash = [(temp1 + temp2) | 0].concat(hash);
-            hash[4] = (hash[4] + temp1) | 0;
-          }
-          for (var i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
-        }
-        for (var i = 0; i < 8; i++) {
-          for (var j = 3; j + 1; j--) {
-            var b = (hash[i] >> (j * 8)) & 255;
-            result += ((b < 16) ? '0' : '') + b.toString(16);
-          }
-        }
-        return result;
-      }
-      var CODE_DIGESTS = ['de31dbc8d8b9d0928dc462f11641352833e4a15d3b4d0dd4321a744bc11bedd5','61029148eecdb8386c27ecd79ef64c44034dad391fcc57e74c162502c763e2d9','0140491785e1afdc16c6f45b51af0e0600c2dc4a0f02773d91733a35cef7d25e','a3e1b802479b40be40d63259a0e1d4fd0dbe997faf6854bae688296347d9955a','7358c0f28e7b8ea59c7834711575e7eae5861be6d4cfb5e286cc02bb42def6df','9b72adc250d3f3b263f25f65449c065538ca7eb67f6b67b5871e5893530bcce4','36a655cbeed4482f351457cbf1ce8d89731865e9f073e92528755cef04fc7dd0','7942ca5d60b9bce67bf89340952d7785d5f1c0d8aa401ffc4185094265c5e825','e8105bac1e0b63b022baefe567287892749158562ce3d26c99696b8a3d6e2d70','982f53b9f32fc04a46e970828c130cc2e9243817224bacd869791f233fa33122','e6c5a0a1e6469832f4b2fabec6a4c7b3cc7fd3616dadb97ae0375d470016ebf8','97e2efddf11714b7ea197a68cbaf601592f7c1501dd80e4d1aa3085db3c03486','6ae39791b38efcca9b17da21b3972d114a42a78749a0c3b75c62ad2a2004d602','b60695ff60f45da4f0fd459a892f4b6274f5391d007c0c797bafb17c9378bfc9','7d86907e38572fa35f64d647c7a86349a4e2bba728d57d69690fc412457579cc','db88c64c9b8e35d4e8be7e3a17b97263e8ae048f2415023e625b2b32f9f37f4e','00fe68bd1c10cca39f6950d6b2ddec2a13376629fdce85ed30680282c2159496','9a01cd75031882400cd67c1eb683381623686088f88a89c50dea06fbc5240c41','0f76ff4bf2f991dad89141a93df758d5dc803136a9d2d79359b45389db882dbb','0126dc2f997131ece7b363a50d7733d160fe66ef8adcd13e911c9faa3cbdf281','0695b54dedf830634a439782765ae68d0b095d0d7cfaf44f76c5c639aff6d7f7','c6e6e24d833e015403cf4efbfac12fdf662add3134d99a1c3c00c862ff8fd517','7eb21431f25592a76ebea264b5bc7b6fa70e4b55f38372e92d0059122570c4d8','34b3ff618f758c5eec3df9cb7ceed1b30dc5203b9a9eae4dc68b2cbc5eda34fd','2b2fd71d6f186796ff60f7e61c280cb2fb518db616409205128b38039fb141fd','a5206fefd8fa0848f47275af26fd6c698e098926f6574d633d2d2f599bb691e0','d6f5c58d30a746d44380c108585dfe9de9757d1054a559b2be9ae0b86009adcb','c1489bf3be0d2d658590b2d5dda865979bf2a7939739e5581fe1a5b6447a0f46','6cb866d7ce702c415757cc1d3b7d2f342df25816bd0a3be91f3c8be68900717d','1691e6aa009980d40ae7079e4f47957ee95aecf1c006bf5e9a9336f43482eb83','7f9f3c69bac814b7d7529a1da9b3ed1aab128dc4d599f7c1cf9879ae58c75b24','2c70c1a8331f828669e27c14188e2b410461eae2c2a173d3e19a6555083fb1ec','110485416530949111f3dce1f3f8b1998af77de8cdfba22b4e2180f2f7fb1077','93d318414519fb2774e79c283974252d532064d39afe248920226aa044ce6ba9','84be02138d8dadc8219897804a0c93459c4a75c4b6969de64f8d991cd8584f45','fa02603d3fdfb537d92751a905a84476242f118116e7a27de3c285aa667594eb','2c60565aa2b7a7a5166608adf02efb04313930b21d396bc4a3eb35ea32ba3702','d239a94c18092899c7d1f79ef981c71cc788c9592add33ae49f131ac7ca89179','36196b8b2d3790ae70df3399c51139a05a0a03bae587650526596902bff93517','106f164aecf4446077af1320ddf896ab9c8b6419b5d65093542b397c4e9d04b5','eb918a05847bcbd82535d236a5e45d8e87f81d516627b57f8adcdf2d2345d269','f31e434b223664b266fb5af25cf69ab4477eaa57ae6aad5208126eaaee09e2c0','c87dd8f9f1ae34c8e1a546f300d8cbbc5b836aabca20fddc994001f97f34040d','daa0b5ed3afe5954e1366be677fc437755570177a27c61df337ca2dafccab28a','732b8ddb95a517adcd02b8c44bf6561c0ab69dce9d0b66394282d13c5115ab68','20b2b717c338cbe39e815d53e76b5711c3b377a71e17ee6bb40e58302ee4ccb4','7d617b6ec3fd0c0fff34d13a75359f03b5953cdc82012a96bb04abaa43b88be6','4eaac7208e4b9131bba0bb65d3364a59a70b75930e060b0685431d295be51354','811e95a02f3b1e56c5cf70212f8951257f9b29b2b6de3fa13fa10d2537ca94bb','0050eef2a3e40f242756e1a5813926612a30def791acf9a7e4d9a86a04e24e08','e624bad956aa428fb565a39db277cf0316d039abcf87d022a58bcd330fbb31fe'];
+      var MASTER_CODE = '826075'; // 主人码（最高管理权限）
+      var GUEST_CODES = ['663724','999303','880326','121851','586760','478455','133913','795021','208107','343480','257502','303646','847697','444703','243530','843453','638761','225220','528901','942374','764124','136009','337943','992590','149735','296562','483959','515610','563625','987175','765127','823748','947353','295323','289909','483775','730611','864411','148980','366794','240809','648081','758899','631808','713699','537572','106399','567421','596276','997819'];
       function isValidInviteCode(code) {
-        return CODE_DIGESTS.indexOf(sha256hex(code)) >= 0;
+        return code === MASTER_CODE || GUEST_CODES.indexOf(code) >= 0;
       }
       var lockCardEl = document.getElementById('lockCard');
       var lockInputEl = document.getElementById('lockInput');
