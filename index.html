@@ -1,0 +1,2648 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:," />
+    <title>螺旋圣诞树</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet" />
+    <script>
+      /* 锁屏判定（在页面渲染前同步执行，避免已解锁时闪一下锁屏、未解锁时闪一下树）：
+         带 ?s= 的分享链接是观看模式，不加锁；
+         设备上存的邀请码还在清单里 → 直接进；不在清单里（或没存过）→ 显示锁屏。 */
+      (function () {
+        try {
+          var hasShare = false;
+          try { hasShare = !!(window.URLSearchParams && new URLSearchParams(location.search).get('s')); } catch (e) {}
+          if (!hasShare && location.hash) hasShare = /[#&]s=/.test(location.hash);
+          if (hasShare) return;
+          var codes = ['826075','663724','999303','880326','121851','586760','478455','133913','795021','208107','343480','257502','303646','847697','444703','243530','843453','638761','225220','528901','942374','764124','136009','337943','992590','149735','296562','483959','515610','563625','987175','765127','823748','947353','295323','289909','483775','730611','864411','148980','366794','240809','648081','758899','631808','713699','537572','106399','567421','596276','997819'];
+          var saved = null;
+          try { saved = localStorage.getItem('luo-xuan-sheng-dan-shu-unlock'); } catch (e) {}
+          if (!saved || codes.indexOf(saved) < 0) document.documentElement.classList.add('is-locked');
+        } catch (e) {
+          document.documentElement.classList.add('is-locked');
+        }
+      })();
+    </script>
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+        background: #030105;
+        overscroll-behavior: none;
+      }
+      body {
+        font-family: "Cormorant Garamond", "Times New Roman", serif;
+        color: #fff;
+        position: relative;
+      }
+      #scene {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        display: block;
+        touch-action: none; /* 拖挂件时不触发页面手势 */
+      }
+      /* 左侧斜体英文 —— 与原视频一致的位置与气质 */
+      .greeting {
+        position: absolute;
+        left: clamp(18px, 4.5vw, 64px);
+        top: 50%;
+        transform: translateY(-54%);
+        z-index: 3;
+        pointer-events: none;
+        user-select: none;
+        max-width: 40vw;
+      }
+      .greeting .line1 {
+        font-family: "Great Vibes", "Pinyon Script", "Segoe Script", "Brush Script MT", Georgia, "Times New Roman", serif;
+        font-style: italic;
+        font-size: clamp(20px, 5.4vw, 68px);
+        line-height: 1.05;
+        color: #fff5f8;
+        white-space: nowrap;
+        text-shadow:
+          0 0 18px rgba(255, 150, 190, .55),
+          0 0 42px rgba(255, 110, 165, .28),
+          0 2px 18px rgba(0,0,0,.8);
+        letter-spacing: .01em;
+      }
+      .greeting .line2 {
+        margin-top: 10px;
+        font-style: italic;
+        font-weight: 500;
+        font-size: clamp(11px, 2vw, 27px);
+        letter-spacing: .06em;
+        color: #ffd9e8;
+        white-space: nowrap;
+        text-shadow:
+          0 0 14px rgba(255, 150, 190, .45),
+          0 2px 14px rgba(0,0,0,.85);
+      }
+      .greeting .rule {
+        margin-top: 16px;
+        width: 58px; height: 1px;
+        background: linear-gradient(90deg, rgba(255,183,213,.9), rgba(255,183,213,0));
+      }
+      /* 极淡的暗角，让黑底更有纵深，不抢树 */
+      .vignette {
+        position: absolute; inset: 0; z-index: 2; pointer-events: none;
+        background:
+          radial-gradient(ellipse 90% 80% at 58% 46%, transparent 55%, rgba(0,0,0,.55) 100%);
+      }
+      /* 主题切换工具条：右上角，显眼但不挡树 */
+      .themes {
+        position: absolute;
+        top: calc(env(safe-area-inset-top, 0px) + 14px);
+        right: 16px;
+        z-index: 5;
+        display: flex;
+        gap: 4px;
+        padding: 6px;
+        border-radius: 999px;
+        background: rgba(12, 8, 16, .52);
+        border: 1px solid rgba(255, 255, 255, .16);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+      }
+      .theme-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px 6px 7px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: transparent;
+        color: rgba(255, 255, 255, .78);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .25s ease, color .25s ease, border-color .25s ease;
+      }
+      .theme-btn:hover { background: rgba(255, 255, 255, .10); color: #fff; }
+      .theme-btn.is-active {
+        background: rgba(255, 255, 255, .14);
+        border-color: rgba(255, 255, 255, .35);
+        color: #fff;
+      }
+      .theme-btn .sw {
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        flex: none;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35), 0 0 8px rgba(0, 0, 0, .35);
+      }
+      .sw-pink { background: linear-gradient(135deg, #ffe3f0 0 50%, #ff6fa5 50% 100%); }
+      .sw-gold { background: linear-gradient(135deg, #ffd76a 0 50%, #2f9e5f 50% 100%); }
+      .sw-blue { background: linear-gradient(135deg, #eef6ff 0 50%, #4a7fe0 50% 100%); }
+      .sw-red  { background: linear-gradient(135deg, #f26d5b 0 50%, #2f9e5f 50% 100%); }
+      @media (max-width: 560px) {
+        .themes { right: 10px; top: calc(env(safe-area-inset-top, 0px) + 10px); padding: 5px; gap: 2px; }
+        .theme-btn { padding: 5px 7px 5px 6px; font-size: 11px; gap: 5px; }
+        .theme-btn .sw { width: 14px; height: 14px; }
+      }
+      /* 挂件自由贴：底部中央工具条，显眼但不挡树 */
+      .dock {
+        position: absolute;
+        left: 50%;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        transform: translateX(-50%);
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        max-width: 96vw;
+        pointer-events: none;
+      }
+      .dock-bar {
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dock-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 183, 213, .45);
+        background: rgba(12, 8, 16, .58);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .25s ease, opacity .25s ease;
+      }
+      .dock-btn:hover { background: rgba(255, 255, 255, .12); }
+      .dock-btn .dock-dot {
+        width: 13px; height: 13px;
+        border-radius: 50%;
+        flex: none;
+        background: radial-gradient(circle at 35% 32%, #fff5f8 0 22%, #ff9ec4 45%, #f0508e 100%);
+        box-shadow: 0 0 8px rgba(255, 110, 165, .65);
+      }
+      .del-btn { border-color: rgba(255, 255, 255, .22); color: #ffd9e8; }
+      .del-btn:disabled { opacity: .38; cursor: default; }
+      .del-btn:disabled:hover { background: rgba(12, 8, 16, .58); }
+      .orn-count {
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 11px;
+        color: rgba(255, 255, 255, .72);
+        text-shadow: 0 1px 8px rgba(0, 0, 0, .9);
+        white-space: nowrap;
+      }
+      .tray {
+        pointer-events: auto;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 9px 10px 8px;
+        border-radius: 16px;
+        background: rgba(12, 8, 16, .62);
+        border: 1px solid rgba(255, 255, 255, .16);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+      }
+      .tray.open { display: flex; }
+      .tray-row { display: flex; gap: 6px; }
+      .tray-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        width: 50px;
+        padding: 7px 2px 6px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .06);
+        color: rgba(255, 255, 255, .88);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 11px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .2s ease, border-color .2s ease;
+      }
+      .tray-btn:hover { background: rgba(255, 255, 255, .15); border-color: rgba(255, 255, 255, .3); }
+      .tray-btn svg { width: 21px; height: 21px; display: block; }
+      .tray .hint {
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 11px;
+        color: rgba(255, 255, 255, .62);
+        text-align: center;
+        white-space: nowrap;
+      }
+      /* 照片变换面板：选中照片时出现在屏幕右侧竖排，不挡树、不挡左侧文字，可缩放 / 旋转 */
+      .photo-tools {
+        position: absolute;
+        right: calc(env(safe-area-inset-right, 0px) + 14px);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 7;
+        pointer-events: auto;
+        display: none;
+        flex-direction: column;
+        gap: 14px;
+        width: 248px;
+        max-width: 42vw;
+        padding: 14px 14px 12px;
+        border-radius: 16px;
+        background: rgba(12, 8, 16, .62);
+        border: 1px solid rgba(255, 183, 213, .35);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      .photo-tools.show { display: flex; }
+      /* 已被拖动过：改用 left/top 定位，停在用户放下的位置 */
+      .photo-tools.is-free {
+        right: auto;
+        transform: none;
+      }
+      .photo-tools.is-dragging {
+        box-shadow: 0 16px 42px rgba(0, 0, 0, .62);
+        border-color: rgba(255, 183, 213, .6);
+      }
+      /* 拖动把手：面板顶部的标题栏，按住可把整个面板拖到全屏任意位置 */
+      .pt-handle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 3px 2px 10px;
+        margin-bottom: -3px;
+        border-bottom: 1px solid rgba(255, 255, 255, .13);
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pt-handle:active { cursor: grabbing; }
+      .pt-grip {
+        display: grid;
+        grid-template-columns: repeat(2, 3px);
+        grid-auto-rows: 3px;
+        gap: 3px;
+        flex: none;
+        padding: 1px;
+      }
+      .pt-grip i {
+        width: 3px; height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .55);
+        display: block;
+      }
+      .pt-title {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        color: #fff;
+        flex: 1 1 auto;
+        white-space: nowrap;
+      }
+      .pt-drag-hint {
+        font-size: 10px;
+        color: rgba(255, 255, 255, .55);
+        white-space: nowrap;
+        flex: none;
+      }
+      .pt-group {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .pt-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .pt-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pt-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, .85);
+        white-space: nowrap;
+        flex: none;
+      }
+      .pt-btn {
+        width: 26px; height: 26px;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, .25);
+        background: rgba(255, 255, 255, .08);
+        color: #fff;
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .2s ease;
+      }
+      .pt-btn:hover { background: rgba(255, 255, 255, .18); }
+      .pt-reset {
+        align-self: center;
+        width: auto;
+        height: 26px;
+        border-radius: 999px;
+        padding: 0 14px;
+        font-size: 11px;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      .photo-tools input[type="range"] {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+        height: 28px;
+        accent-color: #ff6fa5;
+        cursor: pointer;
+      }
+      .pt-val {
+        font-size: 12px;
+        color: rgba(255, 255, 255, .88);
+        white-space: nowrap;
+        flex: none;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 560px) {
+        .dock { bottom: calc(env(safe-area-inset-bottom, 0px) + 9px); }
+        .dock-btn { padding: 8px 14px; font-size: 12px; }
+        .tray-btn { width: 43px; padding: 6px 1px 5px; font-size: 10px; }
+        .tray-btn svg { width: 18px; height: 18px; }
+        .tray .hint { font-size: 10px; }
+        .photo-tools { right: calc(env(safe-area-inset-right, 0px) + 8px); width: 196px; max-width: 46vw; padding: 11px 11px 10px; gap: 11px; }
+        .pt-btn { width: 24px; height: 24px; font-size: 14px; }
+        .pt-reset { height: 24px; }
+      }
+      @media (max-height: 420px) {
+        .photo-tools { gap: 9px; padding: 10px 12px 9px; }
+        .photo-tools input[type="range"] { height: 22px; }
+      }
+      /* 存图 / 录屏：右侧工具条（主题条下方），样式与其它工具条一致 */
+      .side-tools {
+        position: absolute;
+        right: 16px;
+        top: calc(env(safe-area-inset-top, 0px) + 66px);
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .side-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, .22);
+        background: rgba(12, 8, 16, .58);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .25s ease;
+      }
+      .side-btn:hover { background: rgba(255, 255, 255, .12); }
+      .side-btn svg { width: 15px; height: 15px; display: block; flex: none; }
+      /* 录屏中提示条：屏幕顶部中央，只给用户看，不进入录制画面 */
+      .rec-badge {
+        position: absolute;
+        top: calc(env(safe-area-inset-top, 0px) + 12px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 6px 6px 12px;
+        border-radius: 999px;
+        background: rgba(12, 8, 16, .62);
+        border: 1px solid rgba(255, 255, 255, .22);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 12px;
+        color: #fff;
+        white-space: nowrap;
+      }
+      .rec-badge.show { display: flex; }
+      .rec-dot {
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: #ff4d5e;
+        box-shadow: 0 0 8px rgba(255, 77, 94, .8);
+        flex: none;
+        animation: recBlink 1.1s ease-in-out infinite;
+      }
+      @keyframes recBlink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+      @media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
+      .rec-stop {
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 120, 150, .55);
+        background: rgba(255, 77, 94, .16);
+        color: #ffd9e8;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .rec-stop:hover { background: rgba(255, 77, 94, .3); }
+      /* 轻提示（存图 / 录屏完成或失败时一闪而过） */
+      .toast {
+        position: absolute;
+        left: 50%;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 78px);
+        transform: translateX(-50%) translateY(8px);
+        z-index: 30;
+        padding: 8px 16px;
+        border-radius: 999px;
+        background: rgba(12, 8, 16, .72);
+        border: 1px solid rgba(255, 255, 255, .2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 12px;
+        color: #fff;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .3s ease, transform .3s ease;
+      }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      /* 导出预览层：存图（PNG）导出后全屏显示原图，长按图片点『存储图像』保存到相册；
+         录屏导出后全屏显示视频，并给出三个保存办法（系统分享存相册 / Safari 打开 / 下载到文件）。 */
+      .export-view {
+        position: absolute; inset: 0; z-index: 40;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+        background: rgba(3, 1, 5, .94);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        overflow-y: auto;
+      }
+      .export-view.show { display: flex; }
+      .export-view img,
+      .export-view video {
+        max-width: 94vw;
+        max-height: 52vh;
+        border-radius: 8px;
+        background: #000;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+      }
+      .export-view video { width: auto; height: auto; }
+      .export-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+      }
+      .export-group[hidden] { display: none; }
+      .export-primary {
+        padding: 13px 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 183, 213, .75);
+        background: rgba(240, 80, 142, .85);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 8px 28px rgba(240, 80, 142, .35);
+      }
+      .export-primary:hover { background: rgba(240, 80, 142, 1); }
+      .export-note {
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: rgba(255, 217, 232, .92);
+        text-align: center;
+        max-width: 520px;
+      }
+      .export-howto {
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, .78);
+        text-align: center;
+        max-width: 520px;
+        padding: 9px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .07);
+        border: 1px solid rgba(255, 255, 255, .14);
+      }
+      .export-howto b { color: #ffd9e8; font-weight: 600; }
+      .export-tip {
+        font-size: clamp(20px, 4.6vw, 30px);
+        font-weight: 700;
+        line-height: 1.45;
+        color: #fff;
+        text-align: center;
+        max-width: 94vw;
+        letter-spacing: .01em;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, .8);
+      }
+      .export-tip b { color: #ffd9e8; font-weight: 700; }
+      .export-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+      .export-open {
+        padding: 11px 22px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 183, 213, .65);
+        background: rgba(240, 80, 142, .28);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .export-open:hover { background: rgba(240, 80, 142, .42); }
+      @media (max-height: 420px) {
+        .export-view { gap: 10px; padding-top: 12px; overflow-y: auto; justify-content: flex-start; }
+        .export-view img, .export-view video { max-height: 42vh; }
+        .export-tip { font-size: clamp(17px, 4vw, 24px); }
+      }
+      /* 观看模式右上角工具条：只有存图 / 保存视频 */
+      .view-tools {
+        position: absolute;
+        top: calc(env(safe-area-inset-top, 0px) + 14px);
+        right: 16px;
+        z-index: 6;
+        display: none;
+        gap: 8px;
+      }
+      body.view-mode .view-tools { display: flex; }
+      /* 观看模式：编辑界面全部隐藏，只剩干净的树和右上角两个按钮 */
+      body.view-mode .themes,
+      body.view-mode .dock,
+      body.view-mode .photo-tools,
+      body.view-mode .side-tools { display: none !important; }
+      /* 分享链接弹层 */
+      .share-view {
+        position: absolute; inset: 0; z-index: 45;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 16px;
+        background: rgba(3, 1, 5, .9);
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      .share-view.show { display: flex; }
+      .share-card {
+        width: min(560px, 94vw);
+        max-height: 92dvh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px 18px 16px;
+        border-radius: 16px;
+        background: rgba(18, 12, 24, .96);
+        border: 1px solid rgba(255, 183, 213, .35);
+        box-shadow: 0 14px 44px rgba(0, 0, 0, .6);
+      }
+      .share-title { font-size: 17px; font-weight: 700; color: #fff; }
+      .share-desc { font-size: 12.5px; line-height: 1.6; color: rgba(255, 255, 255, .75); }
+      .share-link {
+        width: 100%;
+        min-height: 76px;
+        max-height: 130px;
+        resize: none;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, .22);
+        background: rgba(255, 255, 255, .07);
+        color: #ffd9e8;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.5;
+        word-break: break-all;
+      }
+      .share-note { font-size: 12.5px; line-height: 1.6; color: #ffb3cd; }
+      .share-note[hidden] { display: none; }
+      .share-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      /* 锁屏：打开主链接先显示，全屏深色底 + 粉色点缀，与树的风格一致；
+         只有 html 带 is-locked 类时才显示（判定脚本在页面渲染前已跑完，不闪屏） */
+      .lock-view {
+        position: absolute; inset: 0; z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 16px;
+        background:
+          radial-gradient(ellipse 70% 55% at 50% 38%, rgba(240, 80, 142, .16), rgba(240, 80, 142, 0) 70%),
+          #030105;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      html.is-locked .lock-view { display: flex; }
+      .lock-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        width: min(400px, 92vw);
+        padding: 30px 26px 26px;
+        border-radius: 20px;
+        background: rgba(18, 12, 24, .92);
+        border: 1px solid rgba(255, 183, 213, .38);
+        box-shadow: 0 18px 54px rgba(0, 0, 0, .65), 0 0 44px rgba(255, 110, 165, .12);
+        text-align: center;
+      }
+      .lock-icon {
+        width: 52px; height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(240, 80, 142, .16);
+        border: 1px solid rgba(255, 183, 213, .5);
+        box-shadow: 0 0 22px rgba(255, 110, 165, .3);
+      }
+      .lock-icon svg { width: 24px; height: 24px; display: block; }
+      .lock-title {
+        font-family: "Great Vibes", "Pinyon Script", Georgia, serif;
+        font-size: 30px;
+        line-height: 1.1;
+        color: #fff5f8;
+        text-shadow: 0 0 16px rgba(255, 150, 190, .5);
+      }
+      .lock-hint {
+        font-size: 13.5px;
+        line-height: 1.65;
+        color: rgba(255, 217, 232, .92);
+      }
+      .lock-input {
+        width: 100%;
+        max-width: 250px;
+        padding: 13px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 183, 213, .55);
+        background: rgba(255, 255, 255, .07);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: .38em;
+        text-indent: .38em; /* 抵消字距，让六位数字视觉居中 */
+        text-align: center;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+      }
+      .lock-input::placeholder {
+        color: rgba(255, 255, 255, .3);
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: .2em;
+      }
+      .lock-input:focus {
+        border-color: rgba(255, 158, 196, .95);
+        box-shadow: 0 0 0 3px rgba(240, 80, 142, .22);
+      }
+      .lock-btn {
+        padding: 12px 44px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 183, 213, .75);
+        background: rgba(240, 80, 142, .88);
+        color: #fff;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 15.5px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 8px 26px rgba(240, 80, 142, .35);
+        transition: background .2s ease;
+      }
+      .lock-btn:hover { background: rgba(240, 80, 142, 1); }
+      .lock-error {
+        font-size: 13px;
+        line-height: 1.5;
+        color: #ff9db8;
+        min-height: 20px;
+      }
+      .lock-error:empty { min-height: 0; }
+      .lock-card.shake { animation: lockShake .4s ease; }
+      @keyframes lockShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-8px); }
+        40% { transform: translateX(7px); }
+        60% { transform: translateX(-5px); }
+        80% { transform: translateX(3px); }
+      }
+      @media (prefers-reduced-motion: reduce) { .lock-card.shake { animation: none; } }
+      /* 录屏期间：所有界面选项全部隐藏，屏幕上只剩干净的画面和录制提示条 */
+      body.capturing .themes,
+      body.capturing .dock,
+      body.capturing .photo-tools,
+      body.capturing .view-tools,
+      body.capturing .side-tools { display: none !important; }
+      @media (max-width: 560px) {
+        .side-tools { right: 10px; top: calc(env(safe-area-inset-top, 0px) + 58px); }
+        .side-btn { padding: 8px 12px; font-size: 12px; }
+        .toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); font-size: 11px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lock-view" id="lockView" role="dialog" aria-modal="true" aria-label="输入邀请码解锁">
+      <div class="lock-card" id="lockCard">
+        <div class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9ec4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.6" fill="#ff9ec4" stroke="none"/></svg></div>
+        <div class="lock-title">Merry Christmas</div>
+        <div class="lock-hint">这棵圣诞树上了锁，输入六位数邀请码就能解锁，进去装饰属于你的圣诞树。</div>
+        <input class="lock-input" id="lockInput" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="6" placeholder="六位数邀请码" aria-label="六位数邀请码" />
+        <button type="button" class="lock-btn" id="lockBtn">解锁</button>
+        <div class="lock-error" id="lockError" role="alert" aria-live="polite"></div>
+      </div>
+    </div>
+    <canvas id="scene" aria-label="粒子螺旋圣诞树（可切换粉白、金绿、蓝银、红绿四种主题配色），树顶有一颗饱满立体的星星，螺旋光带沿树身盘旋上升，星空背景，右侧偶尔绽放小烟花；点底部挂件按钮可往树上贴彩球、星星、蝴蝶结、雪花、礼物盒，照片挂件是带小夹子的方形照片、可拖到全屏任意位置，选中照片后可用可拖动的面板放大、缩小和旋转，按住面板顶部标题栏可把面板拖到屏幕任意位置，挂件可拖动换位置、点选后删除；右侧工具条有存图和录屏按钮，导出的图片和视频里只有树、挂件和照片，不含任何界面按钮，存图导出后全屏显示原图、长按即可保存到手机相册，录屏最长录 30 秒，录完在预览里可用系统分享存入相册、在 Safari 中打开保存，或下载到文件"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="greeting" aria-hidden="true">
+      <div class="line1">Merry Christmas</div>
+      <div class="line2">have a good day</div>
+      <div class="rule"></div>
+    </div>
+
+    <div class="themes" role="group" aria-label="切换主题配色">
+      <button type="button" class="theme-btn is-active" data-theme="pink" aria-pressed="true"><span class="sw sw-pink" aria-hidden="true"></span>粉白</button>
+      <button type="button" class="theme-btn" data-theme="gold" aria-pressed="false"><span class="sw sw-gold" aria-hidden="true"></span>金绿</button>
+      <button type="button" class="theme-btn" data-theme="blue" aria-pressed="false"><span class="sw sw-blue" aria-hidden="true"></span>蓝银</button>
+      <button type="button" class="theme-btn" data-theme="red" aria-pressed="false"><span class="sw sw-red" aria-hidden="true"></span>红绿</button>
+    </div>
+
+    <div class="side-tools" role="group" aria-label="保存画面">
+      <button type="button" class="side-btn" id="shotBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>存图</button>
+      <button type="button" class="side-btn" id="recBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>录屏</button>
+      <button type="button" class="side-btn" id="shareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>生成链接分享</button>
+    </div>
+
+    <div class="view-tools" role="group" aria-label="保存这棵树">
+      <button type="button" class="side-btn" id="viewShotBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>存图</button>
+      <button type="button" class="side-btn" id="viewRecBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>保存视频</button>
+    </div>
+
+    <div class="rec-badge" id="recBadge" role="status">
+      <span class="rec-dot" aria-hidden="true"></span>
+      <span id="recTime">正在录制 0:00</span>
+      <button type="button" class="rec-stop" id="recStop">停止</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" style="z-index:50"></div>
+
+    <div class="export-view" id="exportView" role="dialog" aria-modal="true" aria-label="导出预览">
+      <div class="export-tip" id="exportTip"></div>
+      <img id="exportImg" alt="导出的圣诞树图片" hidden />
+      <video id="exportVid" hidden playsinline webkit-playsinline controls loop preload="auto"></video>
+      <div class="export-group" id="imgActions">
+        <div class="export-actions">
+          <button type="button" class="export-open" id="exportOpen">在新标签页打开原图</button>
+          <button type="button" class="side-btn" id="exportCloseImg">关闭</button>
+        </div>
+      </div>
+      <div class="export-group" id="vidActions" hidden>
+        <button type="button" class="export-primary" id="vidShare">保存视频到相册</button>
+        <div class="export-note">点上面的按钮会调起系统分享面板：面板里不用点上面的平台，往下拉点『存储视频』就进相册了</div>
+        <div class="export-actions">
+          <button type="button" class="export-open" id="vidSafari">在 Safari 中打开视频</button>
+          <button type="button" class="export-open" id="vidDownload">下载视频到文件</button>
+        </div>
+        <div class="export-howto">在 Safari 里打开后，<b>长按视频点『存储视频』</b>即可存入相册。<br />下载到文件后：<b>打开文件 App → 下载项 → 找到视频 → 点分享 → 存储视频</b></div>
+        <button type="button" class="side-btn" id="exportCloseVid">关闭</button>
+      </div>
+    </div>
+
+    <div class="share-view" id="shareView" role="dialog" aria-modal="true" aria-label="分享链接">
+      <div class="share-card">
+        <div class="share-title">分享这棵树</div>
+        <div class="share-desc">把这个链接发给朋友，朋友打开就能看到你做好的这棵树——只能看、不能改，还能点右上角把图和视频存进他自己的相册。</div>
+        <textarea class="share-link" id="shareLink" readonly aria-label="分享链接"></textarea>
+        <div class="share-note" id="shareNote" hidden>链接太长了，照片没能放进去，朋友看到的树会没有照片；主题、其他挂件和祝福文字都在。</div>
+        <div class="share-actions">
+          <button type="button" class="export-primary" id="shareCopy">复制链接</button>
+          <button type="button" class="side-btn" id="shareClose">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dock">
+      <div class="tray" id="ornTray" role="group" aria-label="选择挂件">
+        <div class="tray-row">
+          <button type="button" class="tray-btn" data-orn="ball"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10" y="2.5" width="4" height="3" rx="1" fill="#ffd9e8"/><circle cx="12" cy="14" r="7.5" fill="#ff6fa5"/><ellipse cx="9.4" cy="11" rx="2.4" ry="1.5" fill="#ffffff" opacity=".8" transform="rotate(-30 9.4 11)"/></svg><span>彩球</span></button>
+          <button type="button" class="tray-btn" data-orn="star"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.5 5.6 6 .7-4.4 4.1 1.2 5.9L12 16.4 6.7 19.3 7.9 13.4 3.5 9.3l6-.7z" fill="#ffb3d1" stroke="#ff8fb8" stroke-width="1" stroke-linejoin="round"/></svg><span>星星</span></button>
+          <button type="button" class="tray-btn" data-orn="bow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 12C7 8 3.5 8.6 3.5 12S7 16 11 12z" fill="#f0508e"/><path d="M13 12c4-4 7.5-3.4 7.5 0S17 16 13 12z" fill="#f0508e"/><path d="M10.5 13.5L8.5 19l2.8-.8L13 20l.6-4.5z" fill="#d63d78"/><circle cx="12" cy="12" r="2.3" fill="#ff8fb8"/></svg><span>蝴蝶结</span></button>
+          <button type="button" class="tray-btn" data-orn="snow"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#dceeff" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M12 3l-2 2.2M12 3l2 2.2M12 21l-2-2.2M12 21l2-2.2"/></svg><span>雪花</span></button>
+          <button type="button" class="tray-btn" data-orn="gift"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="1.5" fill="#3fae6a"/><rect x="3" y="6.5" width="18" height="4" rx="1.2" fill="#57c47e"/><rect x="10.8" y="6.5" width="2.4" height="13.5" fill="#ffd9e8"/><path d="M12 6.5C10 3.8 6.8 4.6 7.6 6.3c.6 1.3 2.8.9 4.4.2zm0 0c2-2.7 5.2-1.9 4.4-.2-.6 1.3-2.8.9-4.4.2z" fill="#ff8fb8"/></svg><span>礼物盒</span></button>
+          <button type="button" class="tray-btn" id="photoBtn"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#ffd9e8" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6" fill="#ffd9e8" stroke="none"/><path d="M4.5 17.5l4.8-4.3 3.4 2.9 2.9-2.4 3.9 3.8" stroke-linejoin="round"/></svg><span>照片</span></button>
+        </div>
+        <div class="hint">点一下挂到树上 · 照片可拖到全屏任意位置 · 选中照片可缩放旋转 · 点选后可删除</div>
+      </div>
+      <div class="dock-bar">
+        <button type="button" class="dock-btn" id="ornToggle" aria-expanded="false" aria-controls="ornTray"><span class="dock-dot" aria-hidden="true"></span>挂件</button>
+        <button type="button" class="dock-btn del-btn" id="ornDelete" disabled>删除选中</button>
+        <span class="orn-count" id="ornCount" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <div class="photo-tools" id="photoTools" role="group" aria-label="照片大小与旋转">
+      <div class="pt-handle" id="ptHandle" title="按住拖动，可把面板移到屏幕任意位置">
+        <span class="pt-grip" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="pt-title">照片变换</span>
+        <span class="pt-drag-hint" aria-hidden="true">按住拖动</span>
+      </div>
+      <div class="pt-group">
+        <div class="pt-head">
+          <span class="pt-label">大小</span>
+          <span class="pt-val" id="scaleVal">100%</span>
+        </div>
+        <div class="pt-row">
+          <button type="button" class="pt-btn" id="scaleDown" aria-label="缩小照片">−</button>
+          <input type="range" id="scaleRange" min="25" max="500" step="1" value="100" aria-label="照片缩放" />
+          <button type="button" class="pt-btn" id="scaleUp" aria-label="放大照片">+</button>
+        </div>
+      </div>
+      <div class="pt-group">
+        <div class="pt-head">
+          <span class="pt-label">旋转</span>
+          <span class="pt-val" id="rotVal">0°</span>
+        </div>
+        <div class="pt-row">
+          <button type="button" class="pt-btn" id="rotLeft" aria-label="向左旋转 1 度">↺</button>
+          <input type="range" id="rotRange" min="-180" max="180" step="1" value="0" aria-label="照片旋转角度" />
+          <button type="button" class="pt-btn" id="rotRight" aria-label="向右旋转 1 度">↻</button>
+        </div>
+      </div>
+      <button type="button" class="pt-btn pt-reset" id="photoReset">复位</button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" hidden />
+
+    <script>
+    (function () {
+      'use strict';
+
+      var canvas = document.getElementById('scene');
+      var ctx = canvas.getContext('2d');
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ================= 画布尺寸 ================= */
+      var W = 0, H = 0, DPR = 1;
+      function resize() {
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        layout();
+      }
+
+      /* ================= 树的几何（anvaka/atree 原理） =================
+         atree 的树由两条参数螺旋线绕出来：
+           x = k · t · sin(t)，  z = k · t · cos(t)，  y 随 t 线性下降
+         t 从树顶（t≈0，半径≈0）一路增大到树底（半径最大），
+         一条螺旋线贴着圆锥面盘旋而下，就是整棵树的骨架。
+         这里沿同一原理采样：粒子云的骨架点全部落在 t·sin(t) 螺旋上，
+         再给半径、角度、高度加细小抖动，堆成细密的粒子云；
+         另取一条同族螺旋作为明亮光带，沿树身持续盘旋上行。 */
+      var TREE_H = 3.4;          // 树高（世界单位）——修长高耸
+      var TREE_R = 1.0;          // 树底半径，高宽比约 1.7（直径计）
+      var T_MAX  = Math.PI * 11; // 螺旋总转角 ≈ 5.5 圈
+      var ELEV   = 26 * Math.PI / 180;  // 镜头在上方约 26° 往下看
+      var COS_E  = Math.cos(ELEV), SIN_E = Math.sin(ELEV); // 每帧带轻微俯仰晃动（不规则摆动）
+
+      var CX = 0, CY = 0, SCALE = 100; // 投影中心与缩放（layout 计算，保证整树入框）
+      function layout() {
+        // 投影后的包围盒：宽 = 2R；高 = H·cosE（树身竖直分量） + 2R·sinE（底圆深度分量） + 爱心余量
+        var projW = 2 * TREE_R * 1.22;                    // 含透视放大余量
+        var projH = TREE_H * COS_E + 2 * TREE_R * SIN_E + 0.55; // 含星星与光晕余量
+        // 整体按横屏构图：左侧祝福语、树占右侧主舞台，任何方向打开都是同一布局
+        var availW = W * 0.66;
+        var availH = H * 0.94;
+        SCALE = Math.min(availW / projW, availH / projH);
+        CX = W * 0.615;
+        CY = H * 0.52;
+      }
+
+      /* 3D → 2D：先绕 Y 轴自转，再按 26° 俯角投影；
+         底圆因此压成椭圆，近处（z>0）透视放大、远处缩小。 */
+      var rot = 0;        // 树体自转角（变速积分，非匀速）
+      var bandSpin = 0;   // 螺旋光带盘旋相位（变速积分）
+      var ringPhase = 0;  // 树底光圈独立相位（变速积分，与树体不同步）
+      function project(x, y, z, out) {
+        var cr = Math.cos(rot), sr = Math.sin(rot);
+        var x1 = x * cr + z * sr;
+        var z1 = -x * sr + z * cr;
+        var persp = 1 + z1 * 0.16; // 近大远小
+        out.x = CX + x1 * SCALE * persp;
+        out.y = CY - (y - TREE_H / 2) * SCALE * COS_E * persp + z1 * SCALE * SIN_E * persp;
+        out.s = persp;
+        out.z = z1;
+        return out;
+      }
+      var P = { x: 0, y: 0, s: 1, z: 0 };
+
+      /* ================= 发光粒子贴图（预渲染，避免逐帧阴影） ================= */
+      function makeSprite(r, g, b) {
+        var c = document.createElement('canvas'); c.width = c.height = 64;
+        var g2 = c.getContext('2d');
+        var grad = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.22, 'rgba(' + r + ',' + g + ',' + b + ',0.95)');
+        grad.addColorStop(0.55, 'rgba(' + r + ',' + g + ',' + b + ',0.28)');
+        grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+        g2.fillStyle = grad; g2.fillRect(0, 0, 64, 64);
+        return c;
+      }
+      /* ================= 主题配色（四套，一键切换） =================
+         所有颜色都收进一张扁平调色板（每项为 [r,g,b]）：
+         切换主题时不直接跳色，而是让当前调色板逐帧向目标插值靠拢，
+         粒子云、光带、星星、背景、烟花、雪花、文字一起平滑变色、不闪屏。 */
+      function C(arr, a) {
+        return 'rgba(' + (arr[0] | 0) + ',' + (arr[1] | 0) + ',' + (arr[2] | 0) + ',' + (a === undefined ? 1 : a) + ')';
+      }
+      var THEMES = {
+        pink: { // 粉白（默认，与原版一致）
+          bg: [3, 1, 5],
+          sWhite: [255, 244, 248], sLight: [255, 183, 213], sPink: [255, 120, 175], sDeep: [240, 80, 145],
+          star0: [255, 215, 232], star1: [255, 158, 196], star2: [255, 111, 165], star3: [240, 75, 139],
+          starThick: [201, 58, 118], starGlow: [255, 110, 165], starFacet: [160, 20, 80],
+          text1: [255, 245, 248], text2: [255, 217, 232], accent: [255, 183, 213]
+        },
+        gold: { // 金绿：金色为主、绿色点缀，深绿黑底
+          bg: [2, 8, 4],
+          sWhite: [255, 248, 230], sLight: [255, 216, 130], sPink: [243, 186, 74], sDeep: [56, 168, 96],
+          star0: [255, 243, 196], star1: [255, 215, 106], star2: [245, 185, 63], star3: [217, 138, 31],
+          starThick: [154, 95, 20], starGlow: [255, 190, 70], starFacet: [120, 70, 10],
+          text1: [255, 247, 224], text2: [255, 233, 168], accent: [255, 216, 130]
+        },
+        blue: { // 蓝银：冰白银蓝，深蓝黑底
+          bg: [2, 4, 12],
+          sWhite: [242, 248, 255], sLight: [186, 214, 255], sPink: [110, 168, 255], sDeep: [70, 120, 235],
+          star0: [238, 246, 255], star1: [188, 216, 255], star2: [127, 176, 255], star3: [74, 127, 224],
+          starThick: [44, 79, 158], starGlow: [120, 170, 255], starFacet: [30, 60, 140],
+          text1: [242, 248, 255], text2: [207, 228, 255], accent: [186, 214, 255]
+        },
+        red: { // 红绿：经典红配绿，暖黑底
+          bg: [6, 3, 2],
+          sWhite: [255, 246, 238], sLight: [255, 158, 128], sPink: [238, 92, 74], sDeep: [58, 172, 96],
+          star0: [255, 227, 214], star1: [255, 171, 143], star2: [242, 109, 91], star3: [214, 58, 46],
+          starThick: [143, 31, 22], starGlow: [240, 90, 70], starFacet: [120, 25, 15],
+          text1: [255, 243, 236], text2: [255, 217, 201], accent: [255, 158, 128]
+        }
+      };
+      function clonePal(p) {
+        var o = {};
+        for (var k in p) o[k] = p[k].slice();
+        return o;
+      }
+      var cur = clonePal(THEMES.pink); // 当前生效的调色板（逐帧插值）
+      var tgt = THEMES.pink;           // 目标主题
+      var currentThemeName = 'pink';   // 当前主题名（用于本地保存 / 恢复）
+      function buildSprites(p) {
+        return {
+          white: makeSprite(p.sWhite[0] | 0, p.sWhite[1] | 0, p.sWhite[2] | 0),
+          light: makeSprite(p.sLight[0] | 0, p.sLight[1] | 0, p.sLight[2] | 0),
+          pink:  makeSprite(p.sPink[0] | 0, p.sPink[1] | 0, p.sPink[2] | 0),
+          deep:  makeSprite(p.sDeep[0] | 0, p.sDeep[1] | 0, p.sDeep[2] | 0)
+        };
+      }
+      var SPR = buildSprites(cur);
+      /* 左侧祝福文字（分享状态里也带这两行，观看模式按链接里的文字显示） */
+      var greetText1 = 'Merry Christmas';
+      var greetText2 = 'have a good day';
+      /* 左侧文字与页面底色跟随调色板 */
+      var gLine1 = document.querySelector('.greeting .line1');
+      var gLine2 = document.querySelector('.greeting .line2');
+      var gRule = document.querySelector('.greeting .rule');
+      function applyTextColors() {
+        gLine1.style.color = C(cur.text1);
+        gLine1.style.textShadow = '0 0 18px ' + C(cur.accent, 0.55) + ', 0 0 42px ' + C(cur.accent, 0.28) + ', 0 2px 18px rgba(0,0,0,.8)';
+        gLine2.style.color = C(cur.text2);
+        gLine2.style.textShadow = '0 0 14px ' + C(cur.accent, 0.45) + ', 0 2px 14px rgba(0,0,0,.85)';
+        gRule.style.background = 'linear-gradient(90deg, ' + C(cur.accent, 0.9) + ', ' + C(cur.accent, 0) + ')';
+        document.body.style.background = C(cur.bg);
+      }
+      /* 每帧把当前调色板向目标推近一小步；还在过渡中就重建粒子贴图并刷新文字 */
+      function stepPalette(dt) {
+        var k = 1 - Math.exp(-dt / 240);
+        var maxD = 0;
+        for (var key in cur) {
+          var a = cur[key], b = tgt[key];
+          for (var i = 0; i < 3; i++) {
+            var d = b[i] - a[i];
+            if (Math.abs(d) > maxD) maxD = Math.abs(d);
+            a[i] += d * k;
+          }
+        }
+        if (maxD > 0.5) { SPR = buildSprites(cur); applyTextColors(); }
+      }
+      function setTheme(name, opts) {
+        if (!THEMES[name]) return;
+        tgt = THEMES[name];
+        currentThemeName = name;
+        var btns = document.querySelectorAll('.theme-btn');
+        for (var i = 0; i < btns.length; i++) {
+          var on = btns[i].getAttribute('data-theme') === name;
+          btns[i].classList.toggle('is-active', on);
+          btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        if (!(opts && opts.skipSave)) scheduleSave();
+      }
+      /* 立即应用主题（恢复时用，不走渐变） */
+      function applyThemeInstant(name) {
+        if (!THEMES[name]) return;
+        cur = clonePal(THEMES[name]);
+        tgt = THEMES[name];
+        currentThemeName = name;
+        SPR = buildSprites(cur);
+        applyTextColors();
+        var btns = document.querySelectorAll('.theme-btn');
+        for (var i = 0; i < btns.length; i++) {
+          var on = btns[i].getAttribute('data-theme') === name;
+          btns[i].classList.toggle('is-active', on);
+          btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+      }
+      /* ================= 本地保存（IndexedDB） =================
+         每次修改都自动保存到浏览器本地数据库，下次打开自动恢复。
+         保存内容：当前主题、全部挂件（种类 / 位置 / 大小）、
+         照片挂件的位置 / 缩放 / 旋转 / 照片本身（dataURL）。
+         删除只由用户点「删除选中」手动完成，这里从不自动清理。 */
+      var DB_NAME = 'luo-xuan-sheng-dan-shu';
+      var DB_STORE = 'kv';
+      var DB_KEY = 'decorState-v1';
+      var saveReady = false; // 恢复完成前不保存，避免覆盖已存数据
+      var saveTimer = null;
+      var dbPromise = null;
+      function openDB() {
+        if (dbPromise) return dbPromise;
+        dbPromise = new Promise(function (resolve, reject) {
+          if (!window.indexedDB) { reject(new Error('no idb')); return; }
+          var req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = function () {
+            var db = req.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+          };
+          req.onsuccess = function () { resolve(req.result); };
+          req.onerror = function () { reject(req.error); };
+        });
+        return dbPromise;
+      }
+      function idbGet(key) {
+        return openDB().then(function (db) {
+          return new Promise(function (resolve, reject) {
+            var tx = db.transaction(DB_STORE, 'readonly');
+            var req = tx.objectStore(DB_STORE).get(key);
+            req.onsuccess = function () { resolve(req.result); };
+            req.onerror = function () { reject(req.error); };
+          });
+        });
+      }
+      function idbSet(key, val) {
+        return openDB().then(function (db) {
+          return new Promise(function (resolve, reject) {
+            var tx = db.transaction(DB_STORE, 'readwrite');
+            tx.objectStore(DB_STORE).put(val, key);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { reject(tx.error); };
+          });
+        });
+      }
+      function serializeState() {
+        var list = [];
+        for (var i = 0; i < ornaments.length; i++) {
+          var o = ornaments[i];
+          if (o.type === 'photo') {
+            list.push({
+              type: 'photo',
+              fx: o.fx, fy: o.fy,
+              scale: o.scale || 1, rot: o.rot || 0,
+              size: o.size,
+              imgData: o.imgData || (o.img ? o.img.src : null)
+            });
+          } else {
+            list.push({ type: o.type, s: o.s, theta: o.theta, size: o.size });
+          }
+        }
+        return { v: 1, theme: currentThemeName, ornaments: list };
+      }
+      function saveStateNow() {
+        if (!saveReady) return;
+        var state = serializeState();
+        idbSet(DB_KEY, state).catch(function () {
+          /* IndexedDB 不可用时兜底存 localStorage（照片可能因体积超限失败，则只存非照片部分） */
+          try { localStorage.setItem(DB_KEY, JSON.stringify(state)); } catch (e) {
+            try {
+              var slim = { v: 1, theme: state.theme, ornaments: state.ornaments.filter(function (x) { return x.type !== 'photo'; }) };
+              localStorage.setItem(DB_KEY, JSON.stringify(slim));
+            } catch (e2) {}
+          }
+        });
+      }
+      function scheduleSave() {
+        if (!saveReady) return;
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(function () { saveTimer = null; saveStateNow(); }, 180);
+      }
+      function loadSavedState() {
+        return idbGet(DB_KEY).then(function (v) {
+          if (v) return v;
+          try {
+            var raw = localStorage.getItem(DB_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) { return null; }
+        }).catch(function () {
+          try {
+            var raw = localStorage.getItem(DB_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) { return null; }
+        });
+      }
+
+      function drawGlow(sprite, x, y, size, alpha) {
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+      }
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+
+      /* ================= 星空 ================= */
+      var stars = [];
+      (function buildStars() {
+        for (var i = 0; i < 230; i++) {
+          stars.push({
+            fx: Math.random(), fy: Math.random(),
+            r: rand(0.5, 1.5),
+            a: rand(0.25, 0.95),
+            ph: rand(0, Math.PI * 2),
+            sp: rand(0.4, 1.4),
+            warm: Math.random() < 0.18
+          });
+        }
+      })();
+
+      /* ================= 粒子云（树体） =================
+         骨架采样自 t·sin(t) / t·cos(t) 螺旋，再叠加锥体填充粒子，
+         粉白配色：纯白与浅粉为主，深粉少量点缀。 */
+      var cloud = [];
+      (function buildCloud() {
+        var N = 9000;
+        for (var i = 0; i < N; i++) {
+          var onSpiral = i < N * 0.6; // 60% 贴螺旋骨架，40% 填充锥体
+          var s; // 0=树底 1=树顶
+          if (onSpiral) {
+            var t = Math.pow(Math.random(), 0.82) * T_MAX;
+            s = 1 - t / T_MAX;
+            var ang = t + rand(-0.16, 0.16);
+            var rad = TREE_R * (t / T_MAX) * rand(0.86, 1.04);
+          } else {
+            s = Math.pow(Math.random(), 0.9);
+            ang = rand(0, Math.PI * 2);
+            rad = TREE_R * (1 - s) * Math.sqrt(Math.random()) * 0.96;
+          }
+          var y = s * TREE_H + rand(-0.03, 0.03);
+          var pick = Math.random();
+          cloud.push({
+            x: rad * Math.sin(ang),
+            z: rad * Math.cos(ang),
+            y: y,
+            s: s,
+            sprK: pick < 0.42 ? 'white' : (pick < 0.82 ? 'light' : (pick < 0.95 ? 'pink' : 'deep')), // 存贴图键名，绘制时查当前 SPR，主题切换才能跟着变色
+            size: rand(4, 11.5) * (1 - s * 0.25),
+            a: rand(0.3, 0.82),
+            ph: rand(0, Math.PI * 2),
+            sp: rand(0.6, 2.2),
+            rise: Math.random() < 0.16 ? rand(0.008, 0.03) : 0 // 少数粒子缓缓上涌
+          });
+        }
+      })();
+
+      /* ================= 螺旋光带（持续盘旋上行） =================
+         一条同族参数螺旋：点密到连成线，亮芯近纯白、外晕粉色，
+         相位随时间推进 → 光点一边绕树旋转、一边由下往上流动。 */
+      var BAND_N = 780;
+      var band = [];
+      (function buildBand() {
+        for (var i = 0; i < BAND_N; i++) band.push(i / BAND_N);
+      })();
+
+      /* ================= 烟花（画面右侧，粉白小烟花） ================= */
+      var fireworks = [];
+      var sparks = [];
+      var nextBoom = 1400;
+      function launchBoom(now) {
+        fireworks.push({
+          x: W * rand(0.70, 0.94),
+          y: H + 10,
+          tx: 0, ty: H * rand(0.14, 0.42),
+          vy: -rand(H * 0.011, H * 0.014),
+          born: now
+        });
+        nextBoom = now + rand(2600, 5200);
+      }
+      function explode(fw) {
+        var n = 42 + (Math.random() * 22 | 0);
+        for (var i = 0; i < n; i++) {
+          var a = (i / n) * Math.PI * 2 + rand(-0.12, 0.12);
+          var sp = rand(0.6, 2.6) * (W < 700 ? 0.8 : 1);
+          var pick = Math.random();
+          sparks.push({
+            x: fw.x, y: fw.y,
+            vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+            life: 1, decay: rand(0.008, 0.016),
+            sprK: pick < 0.45 ? 'white' : (pick < 0.85 ? 'light' : 'pink'),
+            size: rand(7, 15)
+          });
+        }
+      }
+
+      /* ================= 树顶粉色立体星星 =================
+         饱满圆润的五角星：内角半径取外角的 0.58（比经典星形更胖），
+         轮廓用「中点 + 二次曲线过顶点」连法把每个尖角和凹角都磨圆；
+         3D 感来自四层叠加：错位深粉厚度层 → 粉色斜向渐变主面 →
+         五个角的分面明暗（左半瓣叠白、右半瓣压暗）→ 左上白色高光与边缘亮线，
+         最外层再加一圈随脉动呼吸的粉色辉光。 */
+      function starPoints(cx, cy, R, rot) {
+        var pts = [];
+        var rIn = R * 0.58;
+        for (var i = 0; i < 10; i++) {
+          var ang = rot + i * Math.PI / 5; // i=0 正上方顶点
+          var rr = (i % 2 === 0) ? R : rIn;
+          pts.push({ x: cx + Math.sin(ang) * rr, y: cy - Math.cos(ang) * rr });
+        }
+        return pts;
+      }
+      function traceStar(cx, cy, R, rot) {
+        var pts = starPoints(cx, cy, R, rot);
+        var n = pts.length;
+        ctx.beginPath();
+        ctx.moveTo((pts[n - 1].x + pts[0].x) / 2, (pts[n - 1].y + pts[0].y) / 2);
+        for (var i = 0; i < n; i++) {
+          var p = pts[i], q = pts[(i + 1) % n];
+          ctx.quadraticCurveTo(p.x, p.y, (p.x + q.x) / 2, (p.y + q.y) / 2);
+        }
+        ctx.closePath();
+      }
+      function drawStar(now) {
+        project(0, TREE_H + 0.16, 0, P);
+        var pulse = reduceMotion ? 1 : 1 + Math.sin(now * 0.0022) * 0.07;
+        var R = SCALE * 0.20 * pulse; // 直径 ≈ 原来爱心的宽度，树顶占比不变
+        var sway = reduceMotion ? 0 : Math.sin(now * 0.0009) * 0.05; // 极轻微的左右轻摆
+        // 外发光（亮度随脉动呼吸）
+        var glowR = R * 2.6;
+        var glowA = reduceMotion ? 0.34 : 0.30 + 0.10 * Math.sin(now * 0.0022);
+        var grad = ctx.createRadialGradient(P.x, P.y, 0, P.x, P.y, glowR);
+        grad.addColorStop(0, C(cur.starGlow, glowA));
+        grad.addColorStop(0.5, C(cur.starGlow, 0.14));
+        grad.addColorStop(1, C(cur.starGlow, 0));
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = grad;
+        ctx.fillRect(P.x - glowR, P.y - glowR, glowR * 2, glowR * 2);
+        // 厚度层：同形星向下错位一层深粉，从下缘露出 → 立体厚度
+        traceStar(P.x, P.y + R * 0.13, R, sway);
+        ctx.fillStyle = C(cur.starThick);
+        ctx.shadowColor = C(cur.starGlow, 0.85);
+        ctx.shadowBlur = 24;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // 主面：左上亮、右下深的粉色渐变
+        var fg = ctx.createLinearGradient(P.x - R * 0.7, P.y - R * 0.8, P.x + R * 0.6, P.y + R * 0.9);
+        fg.addColorStop(0, C(cur.star0));
+        fg.addColorStop(0.35, C(cur.star1));
+        fg.addColorStop(0.7, C(cur.star2));
+        fg.addColorStop(1, C(cur.star3));
+        traceStar(P.x, P.y, R, sway);
+        ctx.fillStyle = fg;
+        ctx.fill();
+        // 分面明暗 + 高光（裁剪在星形内）
+        ctx.save();
+        traceStar(P.x, P.y, R, sway);
+        ctx.clip();
+        var pts = starPoints(P.x, P.y, R, sway);
+        for (var i = 0; i < 5; i++) {
+          var tip = pts[i * 2];
+          var prevIn = pts[(i * 2 + 9) % 10];
+          var nextIn = pts[(i * 2 + 1) % 10];
+          ctx.beginPath();
+          ctx.moveTo(P.x, P.y); ctx.lineTo(prevIn.x, prevIn.y); ctx.lineTo(tip.x, tip.y);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(255,255,255,0.13)';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(P.x, P.y); ctx.lineTo(tip.x, tip.y); ctx.lineTo(nextIn.x, nextIn.y);
+          ctx.closePath();
+          ctx.fillStyle = C(cur.starFacet, 0.13);
+          ctx.fill();
+        }
+        var hl = ctx.createRadialGradient(P.x - R * 0.34, P.y - R * 0.42, 0, P.x - R * 0.34, P.y - R * 0.42, R * 0.85);
+        hl.addColorStop(0, 'rgba(255,255,255,0.85)');
+        hl.addColorStop(0.45, 'rgba(255,255,255,0.28)');
+        hl.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = hl;
+        ctx.fillRect(P.x - R * 1.3, P.y - R * 1.4, R * 2.6, R * 2.6);
+        ctx.restore();
+        // 边缘亮线
+        traceStar(P.x, P.y, R, sway);
+        ctx.strokeStyle = C(cur.star0, 0.55);
+        ctx.lineWidth = Math.max(1, R * 0.045);
+        ctx.stroke();
+        // 中心偏左上高光点
+        ctx.beginPath();
+        ctx.ellipse(P.x - R * 0.22, P.y - R * 0.30, R * 0.16, R * 0.10, -0.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fill();
+        // 星星周围的小星芒
+        if (!reduceMotion) {
+          for (var k = 0; k < 5; k++) {
+            var a = now * 0.0006 + k * (Math.PI * 2 / 5);
+            var rr = R * 2.05;
+            var sx = P.x + Math.cos(a) * rr, sy = P.y + Math.sin(a) * rr * 0.8;
+            var tw = 0.35 + 0.3 * Math.sin(now * 0.004 + k * 1.7);
+            drawGlow(SPR.pink, sx, sy, 12, Math.max(0, tw));
+          }
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      /* ================= 飘雪（前景层，屏幕空间） =================
+         雪花从屏幕上方缓缓飘落：大小、落速、摇摆幅度与频率各不相同，
+         白色半透明、带一点微光；数量适中，只做氛围不遮挡树和文字。
+         位置用屏幕比例存（fx/fy），窗口尺寸变化时不跳位。 */
+      var snow = [];
+      (function buildSnow() {
+        var N = 90;
+        for (var i = 0; i < N; i++) {
+          snow.push({
+            fx: Math.random(),
+            fy: Math.random(),
+            r: rand(1.1, 3.4),          // 雪花大小各异
+            vy: rand(13, 42),           // 落速（px/秒）各异，整体缓慢
+            swayA: rand(6, 24),         // 左右摇摆幅度
+            swayF: rand(0.25, 0.85),    // 摇摆频率
+            ph: rand(0, Math.PI * 2),
+            a: rand(0.35, 0.85)         // 半透明程度各异
+          });
+        }
+      })();
+      function drawSnow(now, dt) {
+        var tsec = now / 1000;
+        var dtS = dt / 1000;
+        ctx.globalCompositeOperation = 'source-over';
+        for (var i = 0; i < snow.length; i++) {
+          var f = snow[i];
+          if (!reduceMotion) {
+            f.fy += (f.vy * dtS) / Math.max(1, H);
+            if (f.fy > 1.03) { // 落出画面底部 → 回到顶部重新飘
+              f.fy = -0.03;
+              f.fx = Math.random();
+            }
+          }
+          var sx = f.fx * W + (reduceMotion ? 0 : Math.sin(tsec * f.swayF + f.ph) * f.swayA);
+          var sy = f.fy * H;
+          // 微光：先铺一层柔光，再画雪芯
+          drawGlow(SPR.white, sx, sy, f.r * 7, f.a * 0.35);
+          ctx.globalAlpha = f.a;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(sx, sy, f.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      /* ================= 挂件自由贴 =================
+         普通挂件不存屏幕坐标，存的是它在树身上的位置：
+           s     —— 高度比例（0=树底 1=树顶）
+           theta —— 绕树身的角度（树体本地坐标，未叠加自转 rot）
+         每帧按 project() 和粒子云走同一套投影算出屏幕位置，
+         所以普通挂件天然贴在树身表面、跟着树的不规则旋转一起转、不会飘走。
+         照片挂件是例外：存的是全屏比例坐标 fx/fy（0~1 对应屏幕宽高），
+         不贴树身、不跟树转、不受树身范围限制，可放在全屏任意位置。
+         颜色全部取自当前主题调色板 cur，切换主题时挂件跟着一起变色。 */
+      var ornaments = [];
+      var ornSeq = 0;
+      var selectedOrn = null;
+      var dragOrn = null, dragMoved = false;
+      var dragStartX = 0, dragStartY = 0, dragStartTheta = 0, dragStartS = 0;
+      var dragStartFx = 0, dragStartFy = 0;
+
+      var ornTrayEl = document.getElementById('ornTray');
+      var ornToggleEl = document.getElementById('ornToggle');
+      var ornDeleteEl = document.getElementById('ornDelete');
+      var ornCountEl = document.getElementById('ornCount');
+      var photoInputEl = document.getElementById('photoInput');
+      var photoToolsEl = document.getElementById('photoTools');
+      var scaleRangeEl = document.getElementById('scaleRange');
+      var rotRangeEl = document.getElementById('rotRange');
+      var scaleValEl = document.getElementById('scaleVal');
+      var rotValEl = document.getElementById('rotVal');
+
+      function selectedPhoto() {
+        return (selectedOrn && selectedOrn.type === 'photo') ? selectedOrn : null;
+      }
+      /* 选中照片时才显示缩放 / 旋转工具条，并把滑块同步到这张照片当前的值 */
+      function updatePhotoTools() {
+        var p = selectedPhoto();
+        photoToolsEl.classList.toggle('show', !!p);
+        if (!p) return;
+        var sc = Math.round((p.scale || 1) * 100);
+        var rt = Math.round(p.rot || 0);
+        scaleRangeEl.value = sc;
+        rotRangeEl.value = rt;
+        scaleValEl.textContent = sc + '%';
+        rotValEl.textContent = rt + '°';
+      }
+      function refreshDock() {
+        ornDeleteEl.disabled = !selectedOrn;
+        ornCountEl.textContent = ornaments.length ? '已挂 ' + ornaments.length + ' 个' : '';
+        updatePhotoTools();
+      }
+      function selectOrn(orn) { selectedOrn = orn; refreshDock(); }
+      function addOrnament(type, img, imgData, saved) {
+        var isPhoto = type === 'photo';
+        var orn = {
+          id: ++ornSeq,
+          type: type,
+          img: img || null,
+          imgData: imgData || (img ? img.src : null),
+          s: rand(0.30, 0.68),                       // 普通挂件挂在树身中段附近
+          theta: -rot + rand(-0.55, 0.55),           // 正对镜头一面，带一点随机错开防叠
+          fx: isPhoto ? Math.min(0.95, Math.max(0.05, (W ? CX / W : 0.615) + rand(-0.05, 0.05))) : 0, // 照片：全屏比例坐标，初始落在树前方便看到
+          fy: isPhoto ? Math.min(0.92, Math.max(0.08, 0.48 + rand(-0.06, 0.06))) : 0,
+          scale: 1,   // 照片缩放倍数（0.25~5），普通挂件不用
+          rot: 0,     // 照片旋转角度（-180~180 度），普通挂件不用
+          size: isPhoto ? 31.5 : rand(21, 26.25),
+          _x: 0, _y: 0, _z: 1, _r: 12
+        };
+        if (saved) {
+          if (typeof saved.s === 'number') orn.s = saved.s;
+          if (typeof saved.theta === 'number') orn.theta = saved.theta;
+          if (typeof saved.fx === 'number') orn.fx = saved.fx;
+          if (typeof saved.fy === 'number') orn.fy = saved.fy;
+          if (typeof saved.scale === 'number') orn.scale = saved.scale;
+          if (typeof saved.rot === 'number') orn.rot = saved.rot;
+          if (typeof saved.size === 'number') orn.size = saved.size;
+        }
+        ornaments.push(orn);
+        selectOrn(orn);
+        if (!saved) scheduleSave();
+        return orn;
+      }
+      /* 从本地保存恢复全部装饰（主题 + 挂件 + 照片） */
+      function restoreSavedState() {
+        loadSavedState().then(function (state) {
+          try {
+            if (state && state.theme && THEMES[state.theme]) applyThemeInstant(state.theme);
+            if (state && state.ornaments && state.ornaments.length) {
+              var pending = state.ornaments.slice();
+              var loadNext = function () {
+                if (!pending.length) { selectedOrn = null; refreshDock(); saveReady = true; return; }
+                var sv = pending.shift();
+                if (!sv || !sv.type) { loadNext(); return; }
+                if (sv.type === 'photo') {
+                  if (!sv.imgData) { loadNext(); return; }
+                  var im = new Image();
+                  im.onload = function () { addOrnament('photo', im, sv.imgData, sv); loadNext(); };
+                  im.onerror = function () { loadNext(); };
+                  im.src = sv.imgData;
+                } else {
+                  addOrnament(sv.type, null, null, sv);
+                  loadNext();
+                }
+              };
+              loadNext();
+            } else {
+              saveReady = true;
+            }
+          } catch (e) { saveReady = true; }
+        }).catch(function () { saveReady = true; });
+      }
+      function removeSelected() {
+        if (!selectedOrn) return;
+        var i = ornaments.indexOf(selectedOrn);
+        if (i >= 0) ornaments.splice(i, 1);
+        selectedOrn = null;
+        refreshDock();
+        scheduleSave();
+      }
+
+      /* ---- 单个挂件的画法（x,y 为中心，size 为直径，全部用主题色） ---- */
+      function drawOrnShape(orn, x, y, size) {
+        var r = size / 2;
+        if (orn.type === 'ball') {
+          ctx.beginPath(); ctx.moveTo(x, y - r - 5); ctx.lineTo(x, y - r + 1);
+          ctx.strokeStyle = C(cur.accent, 0.8); ctx.lineWidth = 1.2; ctx.stroke();
+          ctx.fillStyle = C(cur.accent);
+          ctx.fillRect(x - r * 0.16, y - r - 5, r * 0.32, 5);
+          var g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+          g.addColorStop(0, C(cur.sWhite)); g.addColorStop(0.45, C(cur.sLight)); g.addColorStop(1, C(cur.sDeep));
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x - r * 0.36, y - r * 0.42, r * 0.26, r * 0.15, -0.6, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+        } else if (orn.type === 'star') {
+          var fg = ctx.createLinearGradient(x - r, y - r, x + r * 0.6, y + r);
+          fg.addColorStop(0, C(cur.star0)); fg.addColorStop(0.4, C(cur.star1));
+          fg.addColorStop(0.75, C(cur.star2)); fg.addColorStop(1, C(cur.star3));
+          traceStar(x, y, r * 1.08, 0);
+          ctx.fillStyle = fg; ctx.fill();
+          ctx.strokeStyle = C(cur.star0, 0.6); ctx.lineWidth = Math.max(1, size * 0.035); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(x - r * 0.2, y - r * 0.28, r * 0.15, r * 0.09, -0.6, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill();
+        } else if (orn.type === 'bow') {
+          ctx.fillStyle = C(cur.sDeep);
+          ctx.beginPath(); ctx.ellipse(x - r * 0.48, y - r * 0.08, r * 0.56, r * 0.4, -0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x + r * 0.48, y - r * 0.08, r * 0.56, r * 0.4, 0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x - r * 0.3, y + r * 0.52, r * 0.2, r * 0.42, 0.35, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x + r * 0.3, y + r * 0.52, r * 0.2, r * 0.42, -0.35, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.22)';
+          ctx.beginPath(); ctx.ellipse(x - r * 0.5, y - r * 0.16, r * 0.3, r * 0.18, -0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x + r * 0.5, y - r * 0.16, r * 0.3, r * 0.18, 0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
+          ctx.fillStyle = C(cur.sPink); ctx.fill();
+          ctx.beginPath(); ctx.arc(x - r * 0.1, y - r * 0.1, r * 0.1, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
+        } else if (orn.type === 'snow') {
+          ctx.strokeStyle = C(cur.sWhite);
+          ctx.lineWidth = Math.max(1.4, size * 0.07);
+          ctx.lineCap = 'round';
+          for (var a = 0; a < 6; a++) {
+            var ang = a * Math.PI / 3 + 0.3;
+            var ex = x + Math.cos(ang) * r, ey = y + Math.sin(ang) * r;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+            var bx = x + Math.cos(ang) * r * 0.62, by = y + Math.sin(ang) * r * 0.62;
+            for (var bSign = -1; bSign <= 1; bSign += 2) {
+              var ba = ang + bSign * 0.65;
+              ctx.beginPath(); ctx.moveTo(bx, by);
+              ctx.lineTo(bx + Math.cos(ba) * r * 0.34, by + Math.sin(ba) * r * 0.34); ctx.stroke();
+            }
+          }
+          ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * 0.06), 0, Math.PI * 2);
+          ctx.fillStyle = C(cur.sWhite); ctx.fill();
+        } else if (orn.type === 'gift') {
+          var bw = size * 0.92, bh = size * 0.62, bx0 = x - bw / 2, by0 = y - bh / 2 + size * 0.1;
+          ctx.fillStyle = C(cur.sDeep);
+          if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx0, by0, bw, bh, 2); ctx.fill(); }
+          else ctx.fillRect(bx0, by0, bw, bh);
+          ctx.fillStyle = C(cur.sPink);
+          if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx0 - size * 0.04, by0 - size * 0.14, bw + size * 0.08, size * 0.2, 2); ctx.fill(); }
+          else ctx.fillRect(bx0 - size * 0.04, by0 - size * 0.14, bw + size * 0.08, size * 0.2);
+          ctx.fillStyle = C(cur.sWhite, 0.92);
+          ctx.fillRect(x - size * 0.055, by0 - size * 0.14, size * 0.11, bh + size * 0.14);
+          ctx.fillStyle = C(cur.accent);
+          ctx.beginPath(); ctx.ellipse(x - size * 0.13, by0 - size * 0.24, size * 0.13, size * 0.07, -0.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x + size * 0.13, by0 - size * 0.24, size * 0.13, size * 0.07, 0.5, 0, Math.PI * 2); ctx.fill();
+        } else if (orn.type === 'photo' && orn.img) {
+          var img = orn.img;
+          var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+          if (iw && ih) {
+            var side = Math.min(iw, ih);
+            /* 整体（照片 + 夹子）绕中心旋转：先平移到中心、转好角度，
+               再在本地坐标里画，夹子自然跟着照片一起转、一起缩放
+               （size 已是缩放后的实际尺寸，夹子尺寸按 size 比例算） */
+            ctx.save();
+            ctx.translate(x, y);
+            if (orn.rot) ctx.rotate(orn.rot * Math.PI / 180);
+            /* 方形展示：居中裁成正方形直接画出，不加边框 / 相框 / 描边；
+               上传的原图不做任何压缩 / 缩小，绘制时开最高质量平滑，
+               按原图分辨率取像素，放大到 500% 也尽量保持清晰 */
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, (iw - side) / 2, (ih - side) / 2, side, side, -r, -r, r * 2, r * 2);
+            /* 顶部小夹子：像晾照片的夹子一样夹在照片上缘正中，
+               夹身大半露在照片上方、下端一小截压住照片；尺寸约为照片的 15% 宽 */
+            var cw = Math.max(5, size * 0.15);         // 夹子宽（约为原来的一半）
+            var ch = Math.max(7, size * 0.23);         // 夹子高（约为原来的一半）
+            var clipX = -cw / 2;
+            var clipY = -r - ch * 0.58;                // 夹子顶端
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+            ctx.shadowBlur = 2;
+            ctx.shadowOffsetY = 1;
+            var clipGrad = ctx.createLinearGradient(clipX, clipY, clipX + cw, clipY + ch);
+            clipGrad.addColorStop(0, C(cur.sLight));
+            clipGrad.addColorStop(1, C(cur.sDeep));
+            ctx.fillStyle = clipGrad;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(clipX, clipY, cw, ch, Math.min(3, cw * 0.3));
+            else ctx.rect(clipX, clipY, cw, ch);
+            ctx.fill();
+            ctx.restore();
+            /* 夹子的转轴小圆点 */
+            ctx.beginPath();
+            ctx.arc(0, clipY + ch * 0.36, Math.max(1, cw * 0.17), 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fill();
+            /* 夹口分缝：下半段中间一道细缝，像两片夹腿 */
+            ctx.beginPath();
+            ctx.moveTo(0, clipY + ch * 0.60);
+            ctx.lineTo(0, clipY + ch - 1);
+            ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            /* 夹身上缘一道高光 */
+            ctx.beginPath();
+            ctx.moveTo(clipX + cw * 0.18, clipY + ch * 0.14);
+            ctx.lineTo(clipX + cw * 0.82, clipY + ch * 0.14);
+            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      /* 每帧绘制全部挂件：普通挂件先算投影并按深度从后往前排，
+         转到背面（z<0）的渐渐变淡，像被树身挡住一样；
+         照片挂件不走投影，位置就是全屏坐标，永远不透明、画在普通挂件之上 */
+      function drawOrnaments(now) {
+        if (!ornaments.length) return;
+        var i, orn, rad;
+        for (i = 0; i < ornaments.length; i++) {
+          orn = ornaments[i];
+          if (orn.type === 'photo') {
+            orn._x = orn.fx * W; orn._y = orn.fy * H;
+            orn._z = 2;
+            orn._size = orn.size * (orn.scale || 1); // 实际尺寸 = 基础尺寸 × 缩放倍数
+            orn._r = orn._size / 2;
+          } else {
+            rad = TREE_R * (1 - orn.s) * 1.03;
+            project(rad * Math.sin(orn.theta), orn.s * TREE_H, rad * Math.cos(orn.theta), P);
+            orn._x = P.x; orn._y = P.y; orn._z = P.z; orn._r = orn.size * P.s / 2; orn._size = orn.size * P.s;
+          }
+        }
+        var sorted = ornaments.slice().sort(function (a, b) { return a._z - b._z; });
+        for (i = 0; i < sorted.length; i++) {
+          orn = sorted[i];
+          var alpha = orn.type === 'photo' ? 1 : (orn._z >= 0 ? 1 : Math.max(0.16, 1 + orn._z * 0.78));
+          ctx.globalAlpha = alpha;
+          drawOrnShape(orn, orn._x, orn._y, orn._size);
+          ctx.globalAlpha = 1;
+          if (orn === selectedOrn) {
+            var pulse = reduceMotion ? 0 : Math.sin(now * 0.005) * 1.5;
+            ctx.strokeStyle = C(cur.accent, 0.95);
+            ctx.lineWidth = 1.6;
+            ctx.setLineDash([5, 4]);
+            if (orn.type === 'photo') {
+              /* 照片选中圈是方形，顶边把小夹子也框进去，并跟着照片一起旋转 */
+              var pad = 6 + pulse;
+              var clipExtra = orn._size * 0.14;
+              ctx.save();
+              ctx.translate(orn._x, orn._y);
+              if (orn.rot) ctx.rotate(orn.rot * Math.PI / 180);
+              ctx.beginPath();
+              if (ctx.roundRect) ctx.roundRect(-orn._r - pad, -orn._r - clipExtra - pad, orn._r * 2 + pad * 2, orn._r * 2 + clipExtra + pad * 2, 4);
+              else ctx.rect(-orn._r - pad, -orn._r - clipExtra - pad, orn._r * 2 + pad * 2, orn._r * 2 + clipExtra + pad * 2);
+              ctx.stroke();
+              ctx.restore();
+            } else {
+              ctx.beginPath();
+              ctx.arc(orn._x, orn._y, orn._r + 6 + pulse, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+            ctx.setLineDash([]);
+          }
+        }
+      }
+
+      /* ---- 点选 / 拖动（指针事件，鼠标触摸通用） ---- */
+      function ornAt(px, py) {
+        var best = null;
+        for (var i = 0; i < ornaments.length; i++) {
+          var o = ornaments[i];
+          var dx = px - o._x, dy = py - o._y;
+          var hit = false;
+          if (o.type === 'photo') {
+            /* 照片是方形（含顶部夹子）：先把点转进照片的本地坐标（抵消旋转），
+               再按方形范围命中；_r 已含缩放倍数，命中范围跟着缩放走 */
+            var rotR = -(o.rot || 0) * Math.PI / 180;
+            var lx = dx * Math.cos(rotR) - dy * Math.sin(rotR);
+            var ly = dx * Math.sin(rotR) + dy * Math.cos(rotR);
+            var hx = Math.max(o._r + 8, 18);
+            var hyTop = o._r + o._size * 0.14 + 8, hyBot = Math.max(o._r + 8, 18);
+            hit = Math.abs(lx) <= hx && ly >= -hyTop && ly <= hyBot;
+          } else {
+            if (o._z < -0.55) continue; // 在背面太深的点不中
+            var hitR = Math.max(o._r + 8, 18); // 命中半径随挂件一起缩小，但保底 18px 不至于点不中
+            hit = dx * dx + dy * dy <= hitR * hitR;
+          }
+          if (hit && (!best || o._z > best._z)) best = o;
+        }
+        return best;
+      }
+      canvas.addEventListener('pointerdown', function (e) {
+        if (viewMode) return; // 观看模式：树只能看，点选 / 拖动全部禁用
+        var o = ornAt(e.clientX, e.clientY);
+        if (o) {
+          dragOrn = o; dragMoved = false;
+          dragStartX = e.clientX; dragStartY = e.clientY;
+          dragStartTheta = o.theta; dragStartS = o.s;
+          dragStartFx = o.fx; dragStartFy = o.fy;
+          selectOrn(o);
+          try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+        } else {
+          selectOrn(null);
+        }
+      });
+      canvas.addEventListener('pointermove', function (e) {
+        if (!dragOrn) return;
+        var dx = e.clientX - dragStartX, dy = e.clientY - dragStartY;
+        if (!dragMoved && dx * dx + dy * dy < 16) return; // 4px 内算点选，不算拖
+        dragMoved = true;
+        if (dragOrn.type === 'photo') {
+          /* 照片：全屏自由拖，只把中心限制在屏幕范围内（全屏任何位置都可以），不受树身限制 */
+          dragOrn.fx = Math.min(1, Math.max(0, dragStartFx + dx / Math.max(1, W)));
+          dragOrn.fy = Math.min(1, Math.max(0, dragStartFy + dy / Math.max(1, H)));
+        } else {
+          var rad = Math.max(0.25, TREE_R * (1 - dragStartS));
+          dragOrn.theta = dragStartTheta + dx / (SCALE * rad);
+          dragOrn.s = Math.min(0.96, Math.max(0.04, dragStartS - dy / (TREE_H * SCALE * COS_E)));
+        }
+      });
+      function endDrag() { if (dragMoved) scheduleSave(); dragOrn = null; dragMoved = false; }
+      canvas.addEventListener('pointerup', endDrag);
+      canvas.addEventListener('pointercancel', endDrag);
+
+      /* ---- 挂件栏接线 ---- */
+      ornToggleEl.addEventListener('click', function () {
+        var open = ornTrayEl.classList.toggle('open');
+        ornToggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      var trayBtns = document.querySelectorAll('[data-orn]');
+      for (var ti = 0; ti < trayBtns.length; ti++) {
+        trayBtns[ti].addEventListener('click', function () {
+          addOrnament(this.getAttribute('data-orn'));
+        });
+      }
+      document.getElementById('photoBtn').addEventListener('click', function () { photoInputEl.click(); });
+      photoInputEl.addEventListener('change', function () {
+        var file = photoInputEl.files && photoInputEl.files[0];
+        photoInputEl.value = '';
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var dataUrl = reader.result;
+          var img = new Image();
+          img.onload = function () { addOrnament('photo', img, dataUrl); };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      });
+      ornDeleteEl.addEventListener('click', removeSelected);
+
+      /* ---- 照片变换面板拖动：按住顶部标题栏把手，把整个面板拖到全屏任意位置 ----
+         拖动只从把手发起，滑块 / 按钮照常操作不会带动面板；
+         拖动期间用指针捕获锁住手势，事件不落到画布上，不会误触后面的树和照片；
+         松手后面板就停在放下的位置（left/top 定位），关掉再打开仍在原位。 */
+      var ptHandleEl = document.getElementById('ptHandle');
+      var ptDrag = null;
+      function clampPanelPos(left, top, w, h) {
+        var maxL = Math.max(0, window.innerWidth - w);
+        var maxT = Math.max(0, window.innerHeight - h);
+        return {
+          left: Math.min(maxL, Math.max(0, left)),
+          top: Math.min(maxT, Math.max(0, top))
+        };
+      }
+      function movePanelTo(left, top, w, h) {
+        var pos = clampPanelPos(left, top, w, h);
+        photoToolsEl.style.left = pos.left + 'px';
+        photoToolsEl.style.top = pos.top + 'px';
+      }
+      ptHandleEl.addEventListener('pointerdown', function (e) {
+        if (e.button !== undefined && e.button !== 0) return; // 只响应主键 / 触摸
+        e.preventDefault();
+        e.stopPropagation();
+        var rect = photoToolsEl.getBoundingClientRect();
+        ptDrag = {
+          id: e.pointerId,
+          dx: e.clientX - rect.left,
+          dy: e.clientY - rect.top,
+          w: rect.width,
+          h: rect.height
+        };
+        /* 先切到 left/top 定位并钉住当前rect位置，切换瞬间面板不跳位 */
+        photoToolsEl.classList.add('is-free', 'is-dragging');
+        photoToolsEl.style.left = rect.left + 'px';
+        photoToolsEl.style.top = rect.top + 'px';
+        try { ptHandleEl.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      ptHandleEl.addEventListener('pointermove', function (e) {
+        if (!ptDrag || e.pointerId !== ptDrag.id) return;
+        e.preventDefault();
+        e.stopPropagation();
+        movePanelTo(e.clientX - ptDrag.dx, e.clientY - ptDrag.dy, ptDrag.w, ptDrag.h);
+      });
+      function endPanelDrag(e) {
+        if (!ptDrag || (e && e.pointerId !== undefined && e.pointerId !== ptDrag.id)) return;
+        ptDrag = null;
+        photoToolsEl.classList.remove('is-dragging');
+      }
+      ptHandleEl.addEventListener('pointerup', endPanelDrag);
+      ptHandleEl.addEventListener('pointercancel', endPanelDrag);
+      /* 面板上的任何按下都不穿透到画布，避免点滑块 / 按钮时误触后面的树和照片 */
+      photoToolsEl.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      /* 窗口尺寸变化时，把已拖走的面板收回屏幕范围内，不让它停在屏幕外 */
+      window.addEventListener('resize', function () {
+        if (!ptDrag && photoToolsEl.classList.contains('is-free')) {
+          var rect = photoToolsEl.getBoundingClientRect();
+          if (rect.width && rect.height) movePanelTo(rect.left, rect.top, rect.width, rect.height);
+        }
+      });
+
+      /* ---- 照片缩放 / 旋转侧边面板接线（长滑块 + 旋转 1° 精细步进） ---- */
+      function setPhotoScale(pct) {
+        var p = selectedPhoto(); if (!p) return;
+        pct = Math.round(Math.min(500, Math.max(25, pct)));
+        p.scale = pct / 100;
+        scaleRangeEl.value = pct;
+        scaleValEl.textContent = pct + '%';
+        scheduleSave();
+      }
+      function setPhotoRot(deg) {
+        var p = selectedPhoto(); if (!p) return;
+        deg = Math.round(deg); // 角度精确到 1°
+        deg = ((deg + 180) % 360 + 360) % 360 - 180; // 归一化到 -180~180
+        p.rot = deg;
+        rotRangeEl.value = deg;
+        rotValEl.textContent = deg + '°';
+        scheduleSave();
+      }
+      scaleRangeEl.addEventListener('input', function () { setPhotoScale(+this.value); });
+      rotRangeEl.addEventListener('input', function () { setPhotoRot(+this.value); });
+      document.getElementById('scaleDown').addEventListener('click', function () {
+        var p = selectedPhoto(); if (p) setPhotoScale(Math.round((p.scale || 1) * 100) - 5);
+      });
+      document.getElementById('scaleUp').addEventListener('click', function () {
+        var p = selectedPhoto(); if (p) setPhotoScale(Math.round((p.scale || 1) * 100) + 5);
+      });
+      document.getElementById('rotLeft').addEventListener('click', function () {
+        var p = selectedPhoto(); if (p) setPhotoRot(Math.round(p.rot || 0) - 1);
+      });
+      document.getElementById('rotRight').addEventListener('click', function () {
+        var p = selectedPhoto(); if (p) setPhotoRot(Math.round(p.rot || 0) + 1);
+      });
+      document.getElementById('photoReset').addEventListener('click', function () {
+        setPhotoScale(100); setPhotoRot(0);
+      });
+      refreshDock();
+
+      /* ================= 存图 / 录屏 =================
+         导出的画面 = 当前画布帧（树、光带、星星、星空、飘雪、烟花、全部挂件与照片）
+         再叠上 DOM 里那层暗角与左侧祝福文字（按 CSS 的位置 / 字号在画布上重绘）。
+         主题条、挂件栏、变换面板、按钮都是 DOM，本来就不在画布里，不会进图 / 进视频；
+         画布里唯一的界面痕迹是选中虚线圈，导出 / 录制前先临时取消选中、无圈渲染后再抓。 */
+      var shotBtnEl = document.getElementById('shotBtn');
+      var recBtnEl = document.getElementById('recBtn');
+      var recBadgeEl = document.getElementById('recBadge');
+      var recTimeEl = document.getElementById('recTime');
+      var recStopEl = document.getElementById('recStop');
+      var toastEl = document.getElementById('toast');
+      var toastTimer = null;
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2600);
+      }
+      /* ============ 导出交付：全屏预览层 ============
+         存图（PNG）：全屏显示原图，上方大字写明长按图片点『存储图像』保存到相册，
+         另有「在新标签页打开原图」备用（这条路径保持不变）。
+         录屏（视频）：全屏显示视频，给三个保存办法——
+         1）主按钮「保存视频到相册」：调起系统分享面板，面板里往下拉点『存储视频』进相册，
+            按钮下方小字写清这一步；
+         2）「在 Safari 中打开视频」：新标签页打开视频，在 Safari 里长按视频点『存储视频』；
+         3）「下载视频到文件」：下载到手机「文件」App 下载目录，
+            说明写清「打开文件 App → 下载项 → 找到视频 → 点分享 → 存储视频」。 */
+      var exportViewEl = document.getElementById('exportView');
+      var exportImgEl = document.getElementById('exportImg');
+      var exportVidEl = document.getElementById('exportVid');
+      var exportTipEl = document.getElementById('exportTip');
+      var exportOpenEl = document.getElementById('exportOpen');
+      var imgActionsEl = document.getElementById('imgActions');
+      var vidActionsEl = document.getElementById('vidActions');
+      var vidShareEl = document.getElementById('vidShare');
+      var vidSafariEl = document.getElementById('vidSafari');
+      var vidDownloadEl = document.getElementById('vidDownload');
+      var exportBlob = null, exportName = '', exportUrl = null;
+      function setExportBlob(blob, filename) {
+        exportBlob = blob; exportName = filename;
+        if (exportUrl) URL.revokeObjectURL(exportUrl);
+        exportUrl = URL.createObjectURL(blob);
+      }
+      function showExportView(blob, filename) {
+        setExportBlob(blob, filename);
+        exportVidEl.hidden = true;
+        exportVidEl.removeAttribute('src');
+        vidActionsEl.hidden = true;
+        imgActionsEl.hidden = false;
+        exportImgEl.hidden = false;
+        exportImgEl.src = exportUrl;
+        exportTipEl.textContent = '长按图片，点『存储图像』即可保存到相册';
+        exportOpenEl.textContent = '在新标签页打开原图';
+        exportViewEl.classList.add('show');
+      }
+      function showVideoExportView(blob, filename) {
+        setExportBlob(blob, filename);
+        exportImgEl.hidden = true;
+        exportImgEl.removeAttribute('src');
+        imgActionsEl.hidden = true;
+        vidActionsEl.hidden = false;
+        exportVidEl.hidden = false;
+        exportVidEl.src = exportUrl;
+        exportTipEl.textContent = '录好了！用下面的办法保存到相册';
+        exportViewEl.classList.add('show');
+        var pr = exportVidEl.play();
+        if (pr && pr.catch) pr.catch(function () {});
+      }
+      function closeExportView() {
+        exportViewEl.classList.remove('show');
+        try { exportVidEl.pause(); } catch (e) {}
+        exportVidEl.removeAttribute('src');
+        exportImgEl.removeAttribute('src');
+        if (exportUrl) { URL.revokeObjectURL(exportUrl); exportUrl = null; }
+        exportBlob = null;
+      }
+      document.getElementById('exportCloseImg').addEventListener('click', closeExportView);
+      document.getElementById('exportCloseVid').addEventListener('click', closeExportView);
+      /* 在新标签页打开：新开一个 blob 地址，预览层关掉也不影响那一页 */
+      function openBlobInNewTab() {
+        if (!exportBlob) return;
+        var u = URL.createObjectURL(exportBlob);
+        var a = document.createElement('a');
+        a.href = u;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        if (a.parentNode) a.parentNode.removeChild(a);
+      }
+      /* 图片备用按钮：在新标签页打开原图 */
+      exportOpenEl.addEventListener('click', openBlobInNewTab);
+      /* 视频办法二：在 Safari 中打开视频（新标签页打开，在 Safari 里长按点『存储视频』） */
+      vidSafariEl.addEventListener('click', openBlobInNewTab);
+      /* 视频办法一（主按钮）：调起系统分享面板，面板里往下拉点『存储视频』进相册 */
+      vidShareEl.addEventListener('click', function () {
+        if (!exportBlob) return;
+        var file = null;
+        try { file = new File([exportBlob], exportName || '螺旋圣诞树.mp4', { type: exportBlob.type || 'video/mp4' }); } catch (e) {}
+        if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+          navigator.share({ files: [file] }).catch(function (err) {
+            if (err && err.name === 'AbortError') return; // 用户自己关掉了面板，不提示
+            showToast('分享没打开，请用下面的办法保存');
+          });
+        } else if (navigator.share) {
+          navigator.share({}).catch(function () {});
+          showToast('当前浏览器不支持分享视频文件，请用下面的办法保存');
+        } else {
+          showToast('当前浏览器不支持系统分享，请用下面的办法保存');
+        }
+      });
+      /* 视频办法三：下载视频到文件（手机「文件」App 的下载目录） */
+      vidDownloadEl.addEventListener('click', function () {
+        if (!exportBlob) return;
+        var u = URL.createObjectURL(exportBlob);
+        var a = document.createElement('a');
+        a.href = u;
+        a.download = exportName || '螺旋圣诞树.mp4';
+        document.body.appendChild(a);
+        a.click();
+        if (a.parentNode) a.parentNode.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+        showToast('已开始下载，去「文件」App 的下载项里找它');
+      });
+      function deliverExport(blob, filename) {
+        showExportView(blob, filename);
+      }
+      function clampN(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+      /* 把暗角 + 左侧祝福文字按页面 CSS 的样子重绘到目标画布上
+         （w2/h2 为目标画布的像素尺寸，内部按 CSS 像素比例换算） */
+      function drawOverlay(c2, w2, h2) {
+        var k = w2 / Math.max(1, W);
+        /* 暗角：径向渐变椭圆，中心 58% / 46%，55% 之前全透明、边缘压暗 */
+        var vcx = w2 * 0.58, vcy = h2 * 0.46;
+        var vrx = w2 * 0.9, vry = h2 * 0.8;
+        c2.save();
+        c2.translate(vcx, vcy);
+        c2.scale(1, vry / Math.max(1, vrx));
+        var vg = c2.createRadialGradient(0, 0, vrx * 0.55, 0, 0, vrx);
+        vg.addColorStop(0, 'rgba(0,0,0,0)');
+        vg.addColorStop(0.55, 'rgba(0,0,0,0)');
+        vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+        c2.fillStyle = vg;
+        c2.fillRect(-vrx, -vrx, vrx * 2, vrx * 2);
+        c2.restore();
+        /* 左侧祝福文字：位置、字号、配色、辉光都与 .greeting 的 CSS 对应 */
+        var s1 = clampN(W * 0.054, 20, 68) * k;
+        var s2 = clampN(W * 0.02, 11, 27) * k;
+        var leftX = clampN(W * 0.045, 18, 64) * k;
+        var lh1 = s1 * 1.05, lh2 = s2 * 1.2;
+        var totalH = lh1 + 10 * k + lh2 + 16 * k + Math.max(1, k);
+        var topY = h2 * 0.5 - totalH * 0.54;
+        c2.save();
+        c2.textBaseline = 'alphabetic';
+        c2.fillStyle = C(cur.text1);
+        c2.font = 'italic ' + s1 + 'px "Great Vibes","Pinyon Script","Segoe Script","Brush Script MT",Georgia,serif';
+        var base1 = topY + s1 * 0.88;
+        c2.shadowColor = C(cur.accent, 0.28);
+        c2.shadowBlur = 42 * k;
+        c2.fillText(greetText1, leftX, base1);
+        c2.shadowColor = C(cur.accent, 0.55);
+        c2.shadowBlur = 18 * k;
+        c2.fillText(greetText1, leftX, base1);
+        c2.fillStyle = C(cur.text2);
+        c2.font = 'italic 500 ' + s2 + 'px "Cormorant Garamond","Times New Roman",serif';
+        c2.shadowColor = C(cur.accent, 0.45);
+        c2.shadowBlur = 14 * k;
+        c2.fillText(greetText2, leftX, topY + lh1 + 10 * k + s2 * 0.82);
+        c2.shadowBlur = 0;
+        var ruleY = topY + lh1 + 10 * k + lh2 + 16 * k;
+        var rg = c2.createLinearGradient(leftX, 0, leftX + 58 * k, 0);
+        rg.addColorStop(0, C(cur.accent, 0.9));
+        rg.addColorStop(1, C(cur.accent, 0));
+        c2.fillStyle = rg;
+        c2.fillRect(leftX, ruleY, 58 * k, Math.max(1, k));
+        c2.restore();
+      }
+
+      /* ---- 存图：高清 PNG（画布帧 ×2，长边封顶 4096） ---- */
+      var fontsReady = !document.fonts;
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { fontsReady = true; });
+      }
+      var stillPending = false;
+      var stillSavedSel = null;
+      var recState = null;
+      function doStillExport() {
+        var ew = canvas.width * 2, eh = canvas.height * 2;
+        var longEdge = Math.max(ew, eh);
+        if (longEdge > 4096) {
+          var f = 4096 / longEdge;
+          ew = Math.round(ew * f); eh = Math.round(eh * f);
+        }
+        var ec = document.createElement('canvas');
+        ec.width = ew; ec.height = eh;
+        var ectx = ec.getContext('2d');
+        ectx.drawImage(canvas, 0, 0, ew, eh);
+        drawOverlay(ectx, ew, eh);
+        if (ec.toBlob) {
+          ec.toBlob(function (blob) {
+            if (blob) deliverExport(blob, '螺旋圣诞树.png');
+          }, 'image/png');
+        } else {
+          var a = document.createElement('a');
+          a.href = ec.toDataURL('image/png');
+          a.download = '螺旋圣诞树.png';
+          document.body.appendChild(a);
+          a.click();
+          if (a.parentNode) a.parentNode.removeChild(a);
+          showToast('图片已保存');
+        }
+      }
+      shotBtnEl.addEventListener('click', function () {
+        if (recState || stillPending) return;
+        stillSavedSel = selectedOrn;
+        selectedOrn = null;
+        refreshDock();
+        stillPending = true; // 主循环渲染完一帧无选中圈的画面后，在帧末抓图导出
+      });
+
+      /* ---- 录屏：录一段干净画面视频（最长 30 秒，可提前停止） ----
+         录制期间给 body 加 capturing 类：主题条 / 挂件栏 / 变换面板 / 工具条全部隐藏，
+         屏幕上只剩干净画面和顶部录制提示条；提示条是 DOM，不在合成画布里，不会进视频。
+         画面走合成画布（主画布帧 + 暗角 + 左侧祝福文字），用 rAF 持续把主画布画上去，
+         再用 captureStream(30) + MediaRecorder 录成视频，视频编码在浏览器原生层完成，
+         不占 JS 主线程，画面流畅丝滑。
+         格式 MP4 优先：按顺序试 avc1 的 MP4、普通 MP4，浏览器支持哪个用哪个，
+         都不支持才退回 WebM。满 30 秒自动结束，也可点提示条上的「停止」提前结束。
+         录完走视频预览层，给三个保存办法（系统分享存相册 / Safari 打开 / 下载到文件）。 */
+      var REC_MAX_MS = 30000;    // 最长录 30 秒
+      var REC_MAX_W = 1280;      // 合成画布宽度封顶，兼顾清晰与录制流畅
+      function fmtRecTime(ms) {
+        var s = Math.floor(ms / 1000);
+        return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+      }
+      function pickRecMime() {
+        if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+        var cands = [
+          'video/mp4;codecs=avc1.640028,mp4a.40.2',
+          'video/mp4;codecs=avc1',
+          'video/mp4',
+          'video/webm;codecs=vp9',
+          'video/webm;codecs=vp8',
+          'video/webm'
+        ];
+        for (var i = 0; i < cands.length; i++) {
+          try { if (MediaRecorder.isTypeSupported(cands[i])) return cands[i]; } catch (e) {}
+        }
+        return '';
+      }
+      function startRecording() {
+        if (recState || stillPending) return;
+        if (!window.MediaRecorder || !canvas.captureStream) {
+          showToast('当前浏览器不支持录屏，请换 Safari 或 Chrome 再试');
+          return;
+        }
+        var mime = pickRecMime();
+        var gw = canvas.width, gh = canvas.height;
+        if (gw > REC_MAX_W) {
+          var f = REC_MAX_W / gw;
+          gw = Math.round(gw * f); gh = Math.round(gh * f);
+        }
+        var rc = document.createElement('canvas');
+        rc.width = gw; rc.height = gh;
+        var rctx = rc.getContext('2d');
+        var stream = null, recorder = null;
+        try {
+          stream = rc.captureStream(30);
+          recorder = mime ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8000000 })
+                          : new MediaRecorder(stream, { videoBitsPerSecond: 8000000 });
+        } catch (e) {
+          showToast('录屏启动失败，请再点一次试试');
+          return;
+        }
+        var savedSel = selectedOrn;
+        selectedOrn = null;
+        refreshDock();
+        document.body.classList.add('capturing');
+        recTimeEl.textContent = '正在录制 0:00 / ' + fmtRecTime(REC_MAX_MS);
+        recBadgeEl.classList.add('show');
+        var st = {
+          rc: rc, rctx: rctx, stream: stream, recorder: recorder,
+          savedSel: savedSel, chunks: [], mime: (recorder.mimeType || mime || 'video/mp4'),
+          start: Date.now(), raf: 0, timer: 0, done: false
+        };
+        recState = st;
+        recorder.ondataavailable = function (e) {
+          if (e.data && e.data.size) st.chunks.push(e.data);
+        };
+        recorder.onstop = function () { finishRecording(); };
+        /* 合成循环：每帧把主画布当前画面 + 暗角 + 祝福文字画到合成画布，
+           captureStream 会把这些帧实时编码进视频 */
+        function drawLoop() {
+          if (st.done) return;
+          rctx.drawImage(canvas, 0, 0, gw, gh);
+          drawOverlay(rctx, gw, gh);
+          st.raf = requestAnimationFrame(drawLoop);
+        }
+        drawLoop();
+        try { recorder.start(250); } catch (e) { endRecording(null); return; }
+        st.timer = setInterval(function () {
+          var el = Date.now() - st.start;
+          recTimeEl.textContent = '正在录制 ' + fmtRecTime(el) + ' / ' + fmtRecTime(REC_MAX_MS);
+          if (el >= REC_MAX_MS) stopRecording();
+        }, 250);
+      }
+      function stopRecording() {
+        var st = recState;
+        if (!st || st.done) return;
+        st.done = true;
+        cancelAnimationFrame(st.raf);
+        clearInterval(st.timer);
+        try { st.recorder.stop(); } catch (e) { finishRecording(); }
+      }
+      function finishRecording() {
+        var st = recState;
+        if (!st) return;
+        var blob = null;
+        if (st.chunks.length) {
+          try { blob = new Blob(st.chunks, { type: st.mime.split(';')[0] }); } catch (e) { blob = null; }
+        }
+        var isMp4 = st.mime.indexOf('mp4') >= 0;
+        endRecording(blob ? (isMp4 ? '螺旋圣诞树.mp4' : '螺旋圣诞树.webm') : null);
+        if (blob) showVideoExportView(blob, isMp4 ? '螺旋圣诞树.mp4' : '螺旋圣诞树.webm');
+      }
+      function endRecording(filename) {
+        var st = recState;
+        if (!st) return;
+        recState = null;
+        cancelAnimationFrame(st.raf);
+        clearInterval(st.timer);
+        if (st.stream) {
+          var tracks = st.stream.getTracks();
+          for (var i = 0; i < tracks.length; i++) { try { tracks[i].stop(); } catch (e) {} }
+        }
+        st.chunks.length = 0;
+        st.rc = null; st.rctx = null;
+        document.body.classList.remove('capturing');
+        recBadgeEl.classList.remove('show');
+        selectedOrn = st.savedSel;
+        refreshDock();
+        if (!filename) showToast('录制失败了，请再点一次「录屏」试试');
+      }
+      recBtnEl.addEventListener('click', startRecording);
+      recStopEl.addEventListener('click', function () {
+        if (recState) stopRecording();
+      });
+
+      /* ================= 生成链接分享 / 观看模式 =================
+         分享：点工具条「生成链接分享」，把当前整棵树的状态
+         （主题、全部挂件的种类 / 位置 / 大小、照片的位置 / 缩放 / 旋转 / 大小、
+         祝福文字）打包进链接参数 ?s=（JSON → UTF-8 → base64url）。
+         照片先按展示的方形居中裁切、压成小图（长边封顶 192px 的 JPEG）再放进链接；
+         链接过长时逐档把照片压得更小，实在放不下就去掉照片并在面板里提示。
+         观看：链接带 ?s= 打开时进入观看模式——用链接里的状态搭出这棵树，
+         编辑界面全部隐藏（CSS body.view-mode），画布点选 / 拖动禁用，
+         右上角只剩「存图」「保存视频」；观看模式全程不读、不写本地保存
+         （saveReady 保持 false，restoreSavedState 不调用，scheduleSave / saveStateNow 都是空转），
+         观看者自己手机里存的装饰不会被动到。 */
+      var SHARE_BASE = 'https://zyu096347-bot.github.io/luo-xuan-sheng-dan-shu/';
+      var SHARE_LINK_MAX = 12000; // 链接总长上限，超过就继续压照片
+      var viewMode = false;
+      var shareBtnEl = document.getElementById('shareBtn');
+      var shareViewEl = document.getElementById('shareView');
+      var shareLinkEl = document.getElementById('shareLink');
+      var shareNoteEl = document.getElementById('shareNote');
+      var shareCopyEl = document.getElementById('shareCopy');
+      var shareCloseEl = document.getElementById('shareClose');
+
+      function b64urlEncode(str) {
+        var b64 = btoa(unescape(encodeURIComponent(str)));
+        return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+      function b64urlDecode(s) {
+        var b64 = String(s).replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        return decodeURIComponent(escape(atob(b64)));
+      }
+      /* 从当前地址里取出分享状态（?s= 或 #s=），解不出来就当普通打开 */
+      function parseSharedState() {
+        try {
+          var raw = null;
+          if (window.URLSearchParams) raw = new URLSearchParams(location.search).get('s');
+          if (!raw && location.hash) {
+            var m = location.hash.match(/[#&]s=([^&]+)/);
+            if (m) raw = m[1];
+          }
+          if (!raw) return null;
+          var obj = JSON.parse(b64urlDecode(raw));
+          if (!obj || typeof obj !== 'object' || !obj.ornaments) return null;
+          return obj;
+        } catch (e) { return null; }
+      }
+      /* 照片压成适合在树上显示的小图：按页面实际展示的方形居中裁切，
+         缩到长边 cap px，导成 JPEG dataURL */
+      function compressPhotoForShare(img, cap) {
+        var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+        if (!iw || !ih) return null;
+        var side = Math.min(iw, ih);
+        var out = Math.max(24, Math.min(cap, side));
+        var c = document.createElement('canvas');
+        c.width = out; c.height = out;
+        var cx2 = c.getContext('2d');
+        cx2.drawImage(img, (iw - side) / 2, (ih - side) / 2, side, side, 0, 0, out, out);
+        try { return c.toDataURL('image/jpeg', 0.72); } catch (e) { return null; }
+      }
+      function buildShareState(photoCap) {
+        var list = [];
+        for (var i = 0; i < ornaments.length; i++) {
+          var o = ornaments[i];
+          if (o.type === 'photo') {
+            list.push({
+              type: 'photo',
+              fx: o.fx, fy: o.fy,
+              scale: o.scale || 1, rot: o.rot || 0,
+              size: o.size,
+              imgData: (photoCap > 0 && o.img) ? compressPhotoForShare(o.img, photoCap) : null
+            });
+          } else {
+            list.push({ type: o.type, s: o.s, theta: o.theta, size: o.size });
+          }
+        }
+        return { v: 1, theme: currentThemeName, g1: greetText1, g2: greetText2, ornaments: list };
+      }
+      function buildShareLink() {
+        var caps = [192, 144, 108, 80, 56, 0];
+        var hasPhoto = false;
+        for (var i = 0; i < ornaments.length; i++) if (ornaments[i].type === 'photo') hasPhoto = true;
+        for (var j = 0; j < caps.length; j++) {
+          var link = SHARE_BASE + '?s=' + b64urlEncode(JSON.stringify(buildShareState(caps[j])));
+          if (link.length <= SHARE_LINK_MAX || caps[j] === 0) {
+            return { link: link, photosDropped: hasPhoto && caps[j] === 0 };
+          }
+        }
+        return { link: SHARE_BASE, photosDropped: hasPhoto };
+      }
+      shareBtnEl.addEventListener('click', function () {
+        if (recState || stillPending) return;
+        var res = buildShareLink();
+        shareLinkEl.value = res.link;
+        shareNoteEl.hidden = !res.photosDropped;
+        shareCopyEl.textContent = '复制链接';
+        shareViewEl.classList.add('show');
+      });
+      shareCloseEl.addEventListener('click', function () { shareViewEl.classList.remove('show'); });
+      shareViewEl.addEventListener('click', function (e) {
+        if (e.target === shareViewEl) shareViewEl.classList.remove('show'); // 点卡片外空白处也能关
+      });
+      function copyShareDone() {
+        shareCopyEl.textContent = '已复制';
+        showToast('链接已复制，发给朋友就能看到这棵树');
+        setTimeout(function () { shareCopyEl.textContent = '复制链接'; }, 2200);
+      }
+      function copyShareFallback() {
+        shareLinkEl.focus();
+        shareLinkEl.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) {}
+        if (ok) copyShareDone();
+        else showToast('自动复制没成功，链接已全选，长按复制即可');
+      }
+      shareCopyEl.addEventListener('click', function () {
+        var link = shareLinkEl.value;
+        if (!link) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).then(copyShareDone, copyShareFallback);
+        } else {
+          copyShareFallback();
+        }
+      });
+      /* 观看模式右上角两个按钮：复用编辑模式同一套存图 / 录屏流程（导出画面同样干净） */
+      document.getElementById('viewShotBtn').addEventListener('click', function () { shotBtnEl.click(); });
+      document.getElementById('viewRecBtn').addEventListener('click', function () { recBtnEl.click(); });
+      /* 进入观看模式：按链接里的状态搭树，全程不碰本地保存 */
+      function enterViewMode(state) {
+        viewMode = true;
+        document.body.classList.add('view-mode');
+        if (state.theme && THEMES[state.theme]) applyThemeInstant(state.theme);
+        if (state.g1) { greetText1 = String(state.g1); gLine1.textContent = greetText1; }
+        if (state.g2) { greetText2 = String(state.g2); gLine2.textContent = greetText2; }
+        var pending = (state.ornaments || []).slice();
+        var loadNext = function () {
+          if (!pending.length) { selectedOrn = null; refreshDock(); return; }
+          var sv = pending.shift();
+          if (!sv || !sv.type) { loadNext(); return; }
+          if (sv.type === 'photo') {
+            if (!sv.imgData) { loadNext(); return; }
+            var im = new Image();
+            im.onload = function () { addOrnament('photo', im, sv.imgData, sv); loadNext(); };
+            im.onerror = function () { loadNext(); };
+            im.src = sv.imgData;
+          } else {
+            addOrnament(sv.type, null, null, sv);
+            loadNext();
+          }
+        };
+        loadNext();
+      }
+
+      /* ================= 邀请码锁（预览版） =================
+         主链接打开时先过锁屏（是否显示由 <head> 里的判定脚本在渲染前决定）：
+         输入的六位数在清单里（主人码或普通邀请码）→ 解锁进入完整页面，
+         并把码存到这台设备，下次打开不用再输；
+         每次打开都会重新核对存的码是否还在清单里，不在了就重新显示锁屏。
+         带 ?s= 的分享链接观看模式不加锁（判定脚本已放行，这里也不拦）。 */
+      var LOCK_KEY = 'luo-xuan-sheng-dan-shu-unlock';
+      var MASTER_CODE = '826075'; // 主人码（最高管理权限）
+      var GUEST_CODES = ['663724','999303','880326','121851','586760','478455','133913','795021','208107','343480','257502','303646','847697','444703','243530','843453','638761','225220','528901','942374','764124','136009','337943','992590','149735','296562','483959','515610','563625','987175','765127','823748','947353','295323','289909','483775','730611','864411','148980','366794','240809','648081','758899','631808','713699','537572','106399','567421','596276','997819'];
+      function isValidInviteCode(code) {
+        return code === MASTER_CODE || GUEST_CODES.indexOf(code) >= 0;
+      }
+      var lockCardEl = document.getElementById('lockCard');
+      var lockInputEl = document.getElementById('lockInput');
+      var lockErrorEl = document.getElementById('lockError');
+      function tryUnlock() {
+        var code = (lockInputEl.value || '').replace(/\D/g, '').slice(0, 6);
+        if (isValidInviteCode(code)) {
+          try { localStorage.setItem(LOCK_KEY, code); } catch (e) {}
+          lockErrorEl.textContent = '';
+          document.documentElement.classList.remove('is-locked');
+          showToast('解锁成功，欢迎来到你的圣诞树');
+        } else {
+          lockErrorEl.textContent = '邀请码不正确，再试一次';
+          lockCardEl.classList.remove('shake');
+          void lockCardEl.offsetWidth; // 重启动画
+          lockCardEl.classList.add('shake');
+          lockInputEl.select();
+        }
+      }
+      document.getElementById('lockBtn').addEventListener('click', tryUnlock);
+      lockInputEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); }
+      });
+      lockInputEl.addEventListener('input', function () {
+        var v = lockInputEl.value.replace(/\D/g, '').slice(0, 6);
+        if (v !== lockInputEl.value) lockInputEl.value = v;
+        if (lockErrorEl.textContent) lockErrorEl.textContent = '';
+      });
+      /* 锁屏上的按下不穿透到画布 */
+      document.getElementById('lockView').addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      if (document.documentElement.classList.contains('is-locked')) {
+        try { lockInputEl.focus({ preventScroll: true }); } catch (e) { try { lockInputEl.focus(); } catch (e2) {} }
+      }
+
+      /* ================= 主循环 ================= */
+      var last = 0;
+      function frame(now) {
+        requestAnimationFrame(frame);
+        var dt = Math.min(50, now - last || 16); last = now;
+        var tsec = now / 1000;
+
+        /* 主题过渡：调色板逐帧向目标主题插值（放在绘制前，本帧即用新色） */
+        stepPalette(dt);
+
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = C(cur.bg);
+        ctx.fillRect(0, 0, W, H);
+
+        /* 星空 */
+        ctx.fillStyle = '#fff';
+        for (var i = 0; i < stars.length; i++) {
+          var st = stars[i];
+          var tw = reduceMotion ? 1 : 0.72 + 0.28 * Math.sin(tsec * st.sp + st.ph);
+          ctx.globalAlpha = st.a * tw;
+          ctx.fillStyle = st.warm ? '#ffe9d6' : '#f4f6ff';
+          ctx.beginPath();
+          ctx.arc(st.fx * W, st.fy * H, st.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        /* 以下发光层用叠加混合，粉白光感更通透 */
+        ctx.globalCompositeOperation = 'lighter';
+
+        /* 不规则旋转：转速由几条不同频率的正弦叠加调制，时快时慢、偶尔近乎停顿，
+           再逐帧积分成角度 —— 不是匀速死转；俯角同时带轻微晃动，整棵树像在轻轻摇摆 */
+        if (!reduceMotion) {
+          var dtS = dt / 1000;
+          var rotBefore = rot;
+          rot += 0.16 * (1 + 0.5 * Math.sin(tsec * 0.21) + 0.3 * Math.sin(tsec * 0.53 + 1.7)) * dtS;
+          bandSpin += 0.35 * (1 + 0.45 * Math.sin(tsec * 0.17 + 0.6) + 0.25 * Math.sin(tsec * 0.61 + 2.3)) * dtS;
+          ringPhase += 0.24 * (1 + 0.6 * Math.sin(tsec * 0.13 + 2.1) + 0.3 * Math.sin(tsec * 0.47 + 0.4)) * dtS;
+          var elNow = ELEV + 0.055 * Math.sin(tsec * 0.29) + 0.03 * Math.sin(tsec * 0.77 + 1.1);
+          COS_E = Math.cos(elNow); SIN_E = Math.sin(elNow);
+          /* 拖动中的普通挂件抵消本帧自转，稳稳跟在指尖下不被树带着跑（照片不跟树转，无需抵消） */
+          if (dragOrn && dragOrn.type !== 'photo') dragOrn.theta -= (rot - rotBefore);
+        }
+
+        /* 树底光圈：半径带波浪起伏，以自己的变速相位绕树转动（与树体不同步），
+           圈上再缀一圈光点，让不规则的转动看得出来 */
+        ctx.globalCompositeOperation = 'source-over';
+        for (var pass = 0; pass < 2; pass++) {
+          ctx.beginPath();
+          for (var k = 0; k <= 96; k++) {
+            var aa = (k / 96) * Math.PI * 2;
+            var wav = 1 + 0.028 * Math.sin(3 * aa + ringPhase * 2.2) + 0.02 * Math.sin(5 * aa - ringPhase * 1.6);
+            var rr3 = TREE_R * 1.04 * wav;
+            project(rr3 * Math.sin(aa + ringPhase), 0.01, rr3 * Math.cos(aa + ringPhase), P);
+            if (k === 0) ctx.moveTo(P.x, P.y); else ctx.lineTo(P.x, P.y);
+          }
+          ctx.strokeStyle = pass === 0 ? C(cur.sPink, 0.06) : C(cur.sLight, 0.24);
+          ctx.lineWidth = pass === 0 ? 5 : 1.2;
+          ctx.stroke();
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        for (var d = 0; d < 48; d++) {
+          var da = (d / 48) * Math.PI * 2 + ringPhase;
+          var dw = 1 + 0.028 * Math.sin(3 * da + ringPhase * 2.2) + 0.02 * Math.sin(5 * da - ringPhase * 1.6);
+          var dr = TREE_R * 1.04 * dw;
+          project(dr * Math.sin(da), 0.02, dr * Math.cos(da), P);
+          var dtw = reduceMotion ? 0.5 : 0.3 + 0.25 * Math.sin(tsec * 1.7 + d * 1.31);
+          drawGlow(d % 3 === 0 ? SPR.pink : SPR.light, P.x, P.y, 7.5 * P.s, Math.max(0.08, dtw));
+        }
+        ctx.globalAlpha = 1;
+
+        /* 粒子云 */
+        for (var j = 0; j < cloud.length; j++) {
+          var p = cloud[j];
+          var yy = p.y;
+          if (p.rise && !reduceMotion) {
+            yy = ((p.y + tsec * p.rise * 10) % (TREE_H * 1.02));
+            // 上涌时半径按高度收分，保持锥形
+            var rr2 = Math.sqrt(p.x * p.x + p.z * p.z);
+            var maxR = TREE_R * (1 - yy / TREE_H);
+            if (rr2 > maxR && rr2 > 0.001) { p.x *= maxR / rr2; p.z *= maxR / rr2; }
+          }
+          project(p.x, yy, p.z, P);
+          var tw2 = reduceMotion ? 1 : 0.7 + 0.3 * Math.sin(tsec * p.sp + p.ph);
+          var fadeTop = yy > TREE_H ? Math.max(0, 1 - (yy - TREE_H) * 8) : 1;
+          drawGlow(SPR[p.sprK], P.x, P.y, p.size * P.s, p.a * tw2 * fadeTop * (0.55 + 0.45 * P.s));
+          // 亮芯
+          ctx.globalAlpha = 0.75 * tw2 * fadeTop;
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(P.x - 0.7, P.y - 0.7, 1.4, 1.4);
+        }
+
+        /* 螺旋光带：s 随时间上行，绕树约 5.5 圈 */
+        var flow = reduceMotion ? 0 : (tsec * 0.045) % 1;
+        for (var b = 0; b < BAND_N; b++) {
+          var s0 = band[b];
+          var s = (s0 + flow) % 1;              // 由下往上流动
+          var tt = (1 - s) * T_MAX + bandSpin;  // 盘旋相位（变速积分，忽快忽慢）
+          var rad = TREE_R * (1 - s) * 1.015 * (1 + 0.02 * Math.sin(s * 12 - tsec * 1.4)); // 带身轻微波浪摆动
+          var bx = rad * Math.sin(tt), bz = rad * Math.cos(tt);
+          var by = s * TREE_H;
+          project(bx, by, bz, P);
+          // 带的明暗：中段最亮，两端渐隐，另有一道亮脉冲沿带上行
+          var edge = Math.sin(s * Math.PI);
+          var pulseBand = 0.72 + 0.28 * Math.sin((s * 3 - tsec * 0.9) * Math.PI * 2);
+          var alpha = Math.pow(edge, 0.6) * pulseBand;
+          if (P.z < -0.55) alpha *= 0.45; // 背面略暗，保留纵深
+          drawGlow(SPR.pink, P.x, P.y, 17 * P.s, alpha * 0.26);       // 粉色外晕
+          drawGlow(SPR.white, P.x, P.y, 8.5 * P.s, alpha * 0.92);     // 近纯白亮芯
+        }
+        ctx.globalAlpha = 1;
+
+        /* 烟花 */
+        if (!reduceMotion) {
+          if (now > nextBoom && fireworks.length < 2) launchBoom(now);
+          for (var f = fireworks.length - 1; f >= 0; f--) {
+            var fw = fireworks[f];
+            fw.y += fw.vy * (dt / 16.7);
+            fw.vy *= 0.995;
+            drawGlow(SPR.pink, fw.x, fw.y, 13, 0.9);
+            drawGlow(SPR.white, fw.x, fw.y + 8, 7, 0.5);
+            if (fw.y <= fw.ty || fw.vy > -1.2) { explode(fw); fireworks.splice(f, 1); }
+          }
+          for (var q = sparks.length - 1; q >= 0; q--) {
+            var sp2 = sparks[q];
+            sp2.x += sp2.vx * (dt / 16.7); sp2.y += sp2.vy * (dt / 16.7);
+            sp2.vy += 0.018 * (dt / 16.7);
+            sp2.vx *= 0.985; sp2.vy *= 0.985;
+            sp2.life -= sp2.decay * (dt / 16.7);
+            if (sp2.life <= 0) { sparks.splice(q, 1); continue; }
+            drawGlow(SPR[sp2.sprK], sp2.x, sp2.y, sp2.size * sp2.life + 3, sp2.life * 0.9);
+          }
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+
+        /* 挂件（贴在树身上，随树旋转，在星星之前画） */
+        drawOrnaments(now);
+
+        /* 树顶星星（不透明层最后画，保证 crisp） */
+        drawStar(now);
+
+        /* 飘雪（最前景，轻轻覆在画面上） */
+        drawSnow(now, dt);
+
+        /* 存图抓帧：本帧是在无选中圈状态下渲染的干净画面，抓它导出高清 PNG，
+           导出后把之前的选中状态恢复回来 */
+        if (stillPending && fontsReady) {
+          stillPending = false;
+          try { doStillExport(); } catch (e) {}
+          if (stillSavedSel) { selectedOrn = stillSavedSel; refreshDock(); }
+          stillSavedSel = null;
+        }
+      }
+
+      /* 主题按钮：一键切换 */
+      var themeBtns = document.querySelectorAll('.theme-btn');
+      for (var tb = 0; tb < themeBtns.length; tb++) {
+        themeBtns[tb].addEventListener('click', function () {
+          setTheme(this.getAttribute('data-theme'));
+        });
+      }
+      applyTextColors();
+
+      window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', function () { setTimeout(resize, 60); });
+      /* 离开页面前把最后一次修改立即落盘，不等防抖 */
+      window.addEventListener('pagehide', function () { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; } saveStateNow(); });
+      window.addEventListener('beforeunload', function () { saveStateNow(); });
+      resize();
+      var sharedState = parseSharedState();
+      if (sharedState) enterViewMode(sharedState); // 带分享状态打开 → 观看模式，不读本地保存
+      else restoreSavedState();
+      requestAnimationFrame(frame);
+    })();
+    </script>
+  </body>
+</html>
