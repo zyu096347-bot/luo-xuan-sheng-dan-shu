@@ -808,6 +808,8 @@ function sha256Hex(ascii) {
         transition: background .2s ease;
       }
       .lock-btn:hover { background: rgba(240, 80, 142, 1); }
+      .lock-btn:disabled { opacity: .55; cursor: default; }
+      .lock-btn:disabled:hover { background: rgba(240, 80, 142, .88); }
       .lock-error {
         font-size: 13px;
         line-height: 1.5;
@@ -2544,36 +2546,109 @@ function sha256Hex(ascii) {
         loadNext();
       }
 
-      /* ================= 邀请码锁（预览版） =================
+      /* ================= 邀请码锁（一人一码、一次有效） =================
          主链接打开时先过锁屏（是否显示由 <head> 里的判定脚本在渲染前决定）：
-         输入的六位数算出 SHA-256 摘要、和清单里的摘要对得上（主人码或普通邀请码）→ 解锁进入完整页面，
-         并把码存到这台设备，下次打开不用再输；
-         每次打开都会重新核对存的码是否还在清单里，不在了就重新显示锁屏。
+         输入的六位数算出 SHA-256 摘要、和清单里的摘要对得上才继续往下核对；
+         普通邀请码一人一码、只能用一次：先去 Firebase 数据库的 codes 节点查这个码
+         （以摘要为键）有没有被用过——用过就提示已被使用；没用过就先把码标记为已用、
+         再解锁；查不到数据库（没网等）就提示网络问题、不放行。
+         主人码不受一次有效限制，不查数据库、任何时候都能反复用。
+         解锁成功后把码存到这台设备，下次打开不用再输（已解锁的设备不受新规影响）；
          带 ?s= 的分享链接观看模式不加锁（判定脚本已放行，这里也不拦）。 */
       var LOCK_KEY = 'luo-xuan-sheng-dan-shu-unlock';
       var CODE_DIGESTS = ['de31dbc8d8b9d0928dc462f11641352833e4a15d3b4d0dd4321a744bc11bedd5','61029148eecdb8386c27ecd79ef64c44034dad391fcc57e74c162502c763e2d9','0140491785e1afdc16c6f45b51af0e0600c2dc4a0f02773d91733a35cef7d25e','a3e1b802479b40be40d63259a0e1d4fd0dbe997faf6854bae688296347d9955a','7358c0f28e7b8ea59c7834711575e7eae5861be6d4cfb5e286cc02bb42def6df','9b72adc250d3f3b263f25f65449c065538ca7eb67f6b67b5871e5893530bcce4','36a655cbeed4482f351457cbf1ce8d89731865e9f073e92528755cef04fc7dd0','7942ca5d60b9bce67bf89340952d7785d5f1c0d8aa401ffc4185094265c5e825','e8105bac1e0b63b022baefe567287892749158562ce3d26c99696b8a3d6e2d70','982f53b9f32fc04a46e970828c130cc2e9243817224bacd869791f233fa33122','e6c5a0a1e6469832f4b2fabec6a4c7b3cc7fd3616dadb97ae0375d470016ebf8','97e2efddf11714b7ea197a68cbaf601592f7c1501dd80e4d1aa3085db3c03486','6ae39791b38efcca9b17da21b3972d114a42a78749a0c3b75c62ad2a2004d602','b60695ff60f45da4f0fd459a892f4b6274f5391d007c0c797bafb17c9378bfc9','7d86907e38572fa35f64d647c7a86349a4e2bba728d57d69690fc412457579cc','db88c64c9b8e35d4e8be7e3a17b97263e8ae048f2415023e625b2b32f9f37f4e','00fe68bd1c10cca39f6950d6b2ddec2a13376629fdce85ed30680282c2159496','9a01cd75031882400cd67c1eb683381623686088f88a89c50dea06fbc5240c41','0f76ff4bf2f991dad89141a93df758d5dc803136a9d2d79359b45389db882dbb','0126dc2f997131ece7b363a50d7733d160fe66ef8adcd13e911c9faa3cbdf281','0695b54dedf830634a439782765ae68d0b095d0d7cfaf44f76c5c639aff6d7f7','c6e6e24d833e015403cf4efbfac12fdf662add3134d99a1c3c00c862ff8fd517','7eb21431f25592a76ebea264b5bc7b6fa70e4b55f38372e92d0059122570c4d8','34b3ff618f758c5eec3df9cb7ceed1b30dc5203b9a9eae4dc68b2cbc5eda34fd','2b2fd71d6f186796ff60f7e61c280cb2fb518db616409205128b38039fb141fd','a5206fefd8fa0848f47275af26fd6c698e098926f6574d633d2d2f599bb691e0','d6f5c58d30a746d44380c108585dfe9de9757d1054a559b2be9ae0b86009adcb','c1489bf3be0d2d658590b2d5dda865979bf2a7939739e5581fe1a5b6447a0f46','6cb866d7ce702c415757cc1d3b7d2f342df25816bd0a3be91f3c8be68900717d','1691e6aa009980d40ae7079e4f47957ee95aecf1c006bf5e9a9336f43482eb83','7f9f3c69bac814b7d7529a1da9b3ed1aab128dc4d599f7c1cf9879ae58c75b24','2c70c1a8331f828669e27c14188e2b410461eae2c2a173d3e19a6555083fb1ec','110485416530949111f3dce1f3f8b1998af77de8cdfba22b4e2180f2f7fb1077','93d318414519fb2774e79c283974252d532064d39afe248920226aa044ce6ba9','84be02138d8dadc8219897804a0c93459c4a75c4b6969de64f8d991cd8584f45','fa02603d3fdfb537d92751a905a84476242f118116e7a27de3c285aa667594eb','2c60565aa2b7a7a5166608adf02efb04313930b21d396bc4a3eb35ea32ba3702','d239a94c18092899c7d1f79ef981c71cc788c9592add33ae49f131ac7ca89179','36196b8b2d3790ae70df3399c51139a05a0a03bae587650526596902bff93517','106f164aecf4446077af1320ddf896ab9c8b6419b5d65093542b397c4e9d04b5','eb918a05847bcbd82535d236a5e45d8e87f81d516627b57f8adcdf2d2345d269','f31e434b223664b266fb5af25cf69ab4477eaa57ae6aad5208126eaaee09e2c0','c87dd8f9f1ae34c8e1a546f300d8cbbc5b836aabca20fddc994001f97f34040d','daa0b5ed3afe5954e1366be677fc437755570177a27c61df337ca2dafccab28a','732b8ddb95a517adcd02b8c44bf6561c0ab69dce9d0b66394282d13c5115ab68','20b2b717c338cbe39e815d53e76b5711c3b377a71e17ee6bb40e58302ee4ccb4','7d617b6ec3fd0c0fff34d13a75359f03b5953cdc82012a96bb04abaa43b88be6','4eaac7208e4b9131bba0bb65d3364a59a70b75930e060b0685431d295be51354','811e95a02f3b1e56c5cf70212f8951257f9b29b2b6de3fa13fa10d2537ca94bb','0050eef2a3e40f242756e1a5813926612a30def791acf9a7e4d9a86a04e24e08','e624bad956aa428fb565a39db277cf0316d039abcf87d022a58bcd330fbb31fe']; // 51 个邀请码（含主人码）的 SHA-256 摘要，页面里不存明文码
       function isValidInviteCode(code) {
         return CODE_DIGESTS.indexOf(sha256Hex(code)) >= 0;
       }
+      /* 主人码的 SHA-256 摘要：主人码不受「一次有效」限制，不查数据库、随时可反复解锁 */
+      var MASTER_DIGEST = 'de31dbc8d8b9d0928dc462f11641352833e4a15d3b4d0dd4321a744bc11bedd5';
       var lockCardEl = document.getElementById('lockCard');
       var lockInputEl = document.getElementById('lockInput');
       var lockErrorEl = document.getElementById('lockError');
-      function tryUnlock() {
-        var code = (lockInputEl.value || '').replace(/\D/g, '').slice(0, 6);
-        if (isValidInviteCode(code)) {
-          try { localStorage.setItem(LOCK_KEY, code); } catch (e) {}
-          lockErrorEl.textContent = '';
-          document.documentElement.classList.remove('is-locked');
-          showToast('解锁成功，欢迎来到你的圣诞树');
-        } else {
-          lockErrorEl.textContent = '邀请码不正确，再试一次';
-          lockCardEl.classList.remove('shake');
-          void lockCardEl.offsetWidth; // 重启动画
-          lockCardEl.classList.add('shake');
-          lockInputEl.select();
-        }
+      var lockBtnEl = document.getElementById('lockBtn');
+      function unlockOk(code) {
+        try { localStorage.setItem(LOCK_KEY, code); } catch (e) {}
+        lockErrorEl.textContent = '';
+        document.documentElement.classList.remove('is-locked');
+        showToast('解锁成功，欢迎来到你的圣诞树');
       }
-      document.getElementById('lockBtn').addEventListener('click', tryUnlock);
+      function unlockFail(msg) {
+        lockErrorEl.textContent = msg;
+        lockCardEl.classList.remove('shake');
+        void lockCardEl.offsetWidth; // 重启动画
+        lockCardEl.classList.add('shake');
+        lockInputEl.select();
+      }
+      /* 带超时的 fetch：网络卡住时也不会让「正在确认」一直转下去 */
+      function fetchWithTimeout(url, opts) {
+        return Promise.race([
+          fetch(url, opts),
+          new Promise(function (resolve, reject) {
+            setTimeout(function () { reject(new Error('timeout')); }, 12000);
+          })
+        ]);
+      }
+      var unlockBusy = false;
+      function tryUnlock() {
+        if (unlockBusy) return;
+        var code = (lockInputEl.value || '').replace(/\D/g, '').slice(0, 6);
+        if (!isValidInviteCode(code)) {
+          unlockFail('邀请码不正确，再试一次');
+          return;
+        }
+        var digest = sha256Hex(code);
+        if (digest === MASTER_DIGEST) { unlockOk(code); return; } // 主人码：直接解锁，不查数据库
+        /* 普通邀请码：去数据库 codes/<摘要> 查是否已被用过 */
+        unlockBusy = true;
+        lockBtnEl.disabled = true;
+        lockBtnEl.textContent = '正在确认…';
+        lockErrorEl.textContent = '';
+        var usedUrl = FIREBASE_DB + '/codes/' + digest + '.json';
+        var usedEtag = null;
+        function done() {
+          unlockBusy = false;
+          lockBtnEl.disabled = false;
+          lockBtnEl.textContent = '解锁';
+        }
+        /* 查的时候连 ETag 一起取回；标记已用时带 if-match 条件写入：
+           两个人几乎同时输同一个码，只有一个人的写入能成功，
+           另一个会收到 412、按「已被使用」处理，不会双双解锁 */
+        fetchWithTimeout(usedUrl, { headers: { 'X-Firebase-ETag': 'true' } })
+          .then(function (r) {
+            if (!r.ok) throw new Error('net');
+            try { usedEtag = r.headers.get('ETag'); } catch (e) {}
+            return r.json();
+          })
+          .then(function (existing) {
+            if (existing !== null && existing !== undefined) {
+              done();
+              unlockFail('这个邀请码已经被使用过了');
+              return null;
+            }
+            /* 没用过：先标记为已用，数据库确认写入后才解锁 */
+            var putHeaders = { 'Content-Type': 'application/json' };
+            if (usedEtag) putHeaders['if-match'] = usedEtag;
+            return fetchWithTimeout(usedUrl, {
+              method: 'PUT',
+              headers: putHeaders,
+              body: JSON.stringify(Date.now())
+            }).then(function (r) {
+              if (r.status === 412) { // 查完到写入之间被别人先用了
+                done();
+                unlockFail('这个邀请码已经被使用过了');
+                return;
+              }
+              if (!r.ok) throw new Error('net');
+              done();
+              unlockOk(code);
+            });
+          })
+          .catch(function () {
+            done();
+            unlockFail('网络好像有点问题，稍后再试一次');
+          });
+      }
+      lockBtnEl.addEventListener('click', tryUnlock);
       lockInputEl.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); }
       });
